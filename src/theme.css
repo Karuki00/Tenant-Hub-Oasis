@@ -996,6 +996,10 @@ body:has(.modal-backdrop) {
   background: transparent;
   font-size: 0.84rem;
 }
+.about-footer button.github-link {
+  font: inherit;
+  cursor: pointer;
+}
 .about-modal > .update-action {
   width: calc(100% - 4rem);
   margin: 0 2rem 1rem;

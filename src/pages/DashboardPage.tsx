@@ -9,6 +9,18 @@ import { Pagination } from "../components/Pagination";
 import { DashboardOverview } from "./DashboardOverview";
 import { AboutModal } from "../components/AboutModal";
 
+function downloadFile(fileName: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 export function DashboardPage({
   tenants,
   view,
@@ -104,22 +116,17 @@ export function DashboardPage({
     }
   };
   const downloadBackup = () => {
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          { schemaVersion: 1, exportedAt: new Date().toISOString(), tenants },
-          null,
-          2,
-        ),
-      ],
-      { type: "application/json" },
+    downloadFile(
+      `tenant-hub-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), tenants }, null, 2),
+      "application/json",
     );
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `tenant-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+  };
+  const exportCsv = () => {
+    const headers = ["Kode Tenant", "No. Unit", "Nama", "Luas", "Daya", "No. tlp", "Email", "No. tlp keadaan darurat", "No Parkir", "Tower", "Periode Huni", "Status"];
+    const cell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+    const rows = filtered.map((tenant) => [tenant.code, tenant.unit, tenant.name, tenant.area, tenant.power, tenant.phone, tenant.email, tenant.emergency, tenant.parking, tenant.tower, tenant.occupancyPeriod, tenant.status].map(cell).join(","));
+    downloadFile(`tenant-hub-export-${new Date().toISOString().slice(0, 10)}.csv`, `\uFEFF${[headers.map(cell).join(","), ...rows].join("\n")}`, "text/csv;charset=utf-8");
   };
   const restoreBackup = async (file?: File) => {
     if (!file) return;
@@ -231,7 +238,7 @@ export function DashboardPage({
                   }}
                 />
               </label>
-              <button className="secondary-button">Ekspor</button>
+              <button className="secondary-button" onClick={exportCsv}>Ekspor</button>
             </div>
           </div>
           <div className="filter-row">

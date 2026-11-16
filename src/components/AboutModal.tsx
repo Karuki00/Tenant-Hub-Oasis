@@ -1,10 +1,20 @@
 import oasisLogo from "../assets/LOGO_OASIS_V2.png";
+import { openUrl } from "@tauri-apps/plugin-opener";
+
+const repositoryUrl = "https://github.com/Karuki00/Tenant-Hub-Oasis";
 
 export function AboutModal({ onClose, updateVersion, onInstallUpdate }: {
   onClose: () => void;
   updateVersion?: string;
   onInstallUpdate: () => void;
 }) {
+  const openRepository = async () => {
+    try {
+      await openUrl(repositoryUrl);
+    } catch {
+      window.open(repositoryUrl, "_blank", "noopener,noreferrer");
+    }
+  };
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <section className="detail-modal about-modal" onClick={(event) => event.stopPropagation()}>
@@ -31,7 +41,7 @@ export function AboutModal({ onClose, updateVersion, onInstallUpdate }: {
           </div>
           <div className="about-footer">
             <p>© 2026 Apartemen Oasis Mitra Sarana. All rights reserved.</p>
-            <a className="github-link" href="https://github.com/Karuki00/Tenant-Hub-Oasis" target="_blank" rel="noreferrer">Link Repository GitHub</a>
+            <button className="github-link" type="button" onClick={() => void openRepository()}>Link Repository GitHub</button>
           </div>
         </div>
         {updateVersion && <button className="update-action" onClick={onInstallUpdate}>Pembaruan v{updateVersion} tersedia - instal sekarang</button>}
