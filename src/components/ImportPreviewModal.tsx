@@ -20,8 +20,8 @@ export function ImportPreviewModal({
       >
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Import validation</p>
-            <h2>Confirm tenant data</h2>
+            <p className="eyebrow">Validasi impor</p>
+            <h2>Konfirmasi data penyewa</h2>
             <p className="muted">
               {preview.fileName} · {preview.rows.length} rows found
             </p>
@@ -33,19 +33,19 @@ export function ImportPreviewModal({
         <div className="import-summary">
           <div>
             <strong>{percentage}%</strong>
-            <small>core fields complete</small>
+            <small>kolom inti lengkap</small>
           </div>
           <div>
             <strong>{preview.rows.length}</strong>
-            <small>records to import</small>
+            <small>data untuk diimpor</small>
           </div>
           <div>
             <strong>{preview.completeCells}</strong>
-            <small>of {preview.totalCells} cells filled</small>
+            <small>dari {preview.totalCells} sel terisi</small>
           </div>
         </div>
         <div className="import-warning">
-          <strong>Missing detail fields</strong>
+          <strong>Kolom detail belum diisi</strong>
           <span>
             {Object.entries(preview.missingByField)
               .filter(([, count]) => count > 0)
@@ -63,22 +63,22 @@ export function ImportPreviewModal({
                 <th>Daya</th>
                 <th>No. tlp</th>
                 <th>Email</th>
-                <th>Emergency</th>
+                <th>Kontak darurat</th>
                 <th>No Parkir</th>
-                <th>Excel summary</th>
+                <th>Ringkasan Excel</th>
               </tr>
             </thead>
             <tbody>
               {preview.rows.slice(0, 50).map((row) => (
                 <tr key={row.code}>
-                  <td>{row.unit || "Missing"}</td>
-                  <td>{row.name || "Missing"}</td>
-                  <td>{row.area || "Missing"}</td>
-                  <td>{row.power || "Missing"}</td>
-                  <td>{row.phone || "Missing"}</td>
-                  <td>{row.email || "Missing"}</td>
-                  <td>{row.emergency || "Missing"}</td>
-                  <td>{row.parking || "Missing"}</td>
+                  <td>{row.unit || "Belum diisi"}</td>
+                  <td>{row.name || "Belum diisi"}</td>
+                  <td>{row.area || "Belum diisi"}</td>
+                  <td>{row.power || "Belum diisi"}</td>
+                  <td>{row.phone || "Belum diisi"}</td>
+                  <td>{row.email || "Belum diisi"}</td>
+                  <td>{row.emergency || "Belum diisi"}</td>
+                  <td>{row.parking || "Belum diisi"}</td>
                   <td>
                     <small>
                       {row.code}
@@ -93,16 +93,16 @@ export function ImportPreviewModal({
         </div>
         {preview.rows.length > 50 && (
           <p className="muted import-note">
-            Showing the first 50 rows for confirmation. All{" "}
-            {preview.rows.length} rows will be imported.
+            Menampilkan 50 baris pertama untuk konfirmasi. Semua{" "}
+            {preview.rows.length} baris akan diimpor.
           </p>
         )}
         <div className="import-actions">
           <button className="secondary-button" onClick={onCancel}>
-            Cancel
+            Batal
           </button>
           <button className="primary-button" onClick={onConfirm}>
-            Confirm and import {preview.rows.length} rows
+            Konfirmasi dan impor {preview.rows.length} baris
           </button>
         </div>
       </section>

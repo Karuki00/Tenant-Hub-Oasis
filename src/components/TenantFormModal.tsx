@@ -64,10 +64,10 @@ export function TenantFormModal({
         <button type="button" className="close-button" onClick={onClose}>
           X
         </button>
-        <p className="eyebrow">Tenant directory</p>
-        <h2>{tenant ? "Edit tenant" : "Add tenant"}</h2>
+        <p className="eyebrow">Direktori penyewa</p>
+        <h2>{tenant ? "Edit penyewa" : "Tambah penyewa"}</h2>
         <p className="muted">
-          The eight fields below are the required tenant detail columns.
+          Delapan kolom di bawah ini adalah data detail penyewa yang wajib.
         </p>
         {error && <p className="form-error">{error}</p>}
         <div className="form-grid">
@@ -118,7 +118,7 @@ export function TenantFormModal({
             onChange={(value) => update("parking", value)}
           />
           <Field
-            label="Kode Tenant (Excel)"
+            label="Kode Penyewa (Excel)"
             value={form.code}
             onChange={(value) => update("code", value)}
           />
@@ -138,17 +138,21 @@ export function TenantFormModal({
               value={form.status}
               onChange={(event) => update("status", event.target.value)}
             >
-              <option>Active</option>
-              <option>Review</option>
+              <option value="Active">Aktif</option>
+              <option value="Review">Perlu ditinjau</option>
+              <option value="Pending">Menunggu</option>
+              <option value="Vacant">Kosong</option>
+              <option value="Expired">Kedaluwarsa</option>
+              <option value="Suspended">Ditangguhkan</option>
             </select>
           </label>
         </div>
         <div className="import-actions">
           <button type="button" className="secondary-button" onClick={onClose}>
-            Cancel
+            Batal
           </button>
           <button type="submit" className="primary-button">
-            Save tenant
+            Simpan penyewa
           </button>
         </div>
       </form>

@@ -1,15 +1,24 @@
+import { useState } from "react";
 import type { Tenant } from "../types/tenant";
 import { Brand } from "../components/Brand";
+import { AboutModal } from "../components/AboutModal";
 
 export function DashboardOverview({
   tenants,
   onOpenDirectory,
   databaseError,
+  updateVersion,
+  onInstallUpdate,
+  onLogout,
 }: {
   tenants: Tenant[];
   onOpenDirectory: () => void;
   databaseError?: string;
+  updateVersion?: string;
+  onInstallUpdate: () => void;
+  onLogout: () => void;
 }) {
+  const [aboutOpen, setAboutOpen] = useState(false);
   const active = tenants.filter((tenant) => tenant.status === "Active").length;
   const incomplete = tenants.filter(
     (tenant) =>
@@ -28,18 +37,18 @@ export function DashboardOverview({
       <aside className="sidebar">
         <Brand />
         <nav>
-          <button className="nav-item active">Dashboard</button>
+          <button className="nav-item active">Dasbor</button>
           <button className="nav-item" onClick={onOpenDirectory}>
-            Tenant directory
+            Direktori penyewa
           </button>
-          <button className="nav-item">Units and floors</button>
         </nav>
         <div className="sidebar-bottom">
           <div className="sync-card">
             <span className="online-dot" /> SQLite database
-            <small>{tenants.length} records loaded</small>
+            <small>{tenants.length} data dimuat</small>
           </div>
-          <button className="nav-item">Settings</button>
+          <button className="nav-item">Pengaturan</button>
+          <button className="nav-item logout-button" onClick={onLogout}>Keluar</button>
           <div className="user-card">
             <span className="avatar">TR</span>
             <div>
@@ -52,42 +61,47 @@ export function DashboardOverview({
       <main className="main-content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Tenant Relation workspace</p>
-            <h1>Dashboard</h1>
-            <p className="muted">Quick access and data health at a glance.</p>
+            <p className="eyebrow">Ruang kerja Tenant Relation</p>
+            <h1>Dasbor</h1>
+            <p className="muted">
+              Akses cepat dan kondisi data secara ringkas.
+            </p>
           </div>
-          <button className="primary-button" onClick={onOpenDirectory}>
-            Open Tenant Directory
+          <button
+            className={`version-button ${updateVersion ? "update-available" : ""}`}
+            onClick={() => setAboutOpen(true)}
+          >
+            v0.1.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}
           </button>
         </header>
         {databaseError && (
           <div className="import-error">
-            Database unavailable: {databaseError}
+            Database tidak tersedia: {databaseError}
           </div>
         )}
         <section className="stats-grid">
           <OverviewStat
-            label="Tenant records"
+            label="Data penyewa"
             value={String(tenants.length)}
-            detail="Stored in SQLite"
+            detail="Tersimpan di SQLite"
             tone="blue"
           />
           <OverviewStat
-            label="Active records"
+            label="Data aktif"
             value={String(active)}
-            detail="Current tenant status"
+            detail="Status penyewa saat ini"
             tone="green"
           />
           <OverviewStat
-            label="Total area"
+            label="Total luas"
             value={`${area.toLocaleString(undefined, { maximumFractionDigits: 1 })} m2`}
-            detail="Imported unit area"
+            detail="Luas unit yang diimpor"
             tone="orange"
           />
           <OverviewStat
-            label="Data completeness"
+            label="Kelengkapan data"
             value={`${completeness}%`}
-            detail={`${incomplete} records need review`}
+            detail={`${incomplete} data perlu ditinjau`}
             tone="red"
           />
         </section>
@@ -95,28 +109,23 @@ export function DashboardOverview({
           <div className="workspace-card quick-access-card">
             <div className="section-heading">
               <div>
-                <h2>Quick access</h2>
+                <h2>Akses cepat</h2>
                 <p className="muted">
-                  Open the most-used Tenant Relation workflows.
+                  Buka alur kerja Tenant Relation yang paling sering digunakan.
                 </p>
               </div>
             </div>
             <button className="quick-access-button" onClick={onOpenDirectory}>
-              <strong>Tenant Directory</strong>
-              <span>Search, filter, import, and manage tenant records</span>
-              <b>Open</b>
-            </button>
-            <button className="quick-access-button">
-              <strong>Units and Floors</strong>
-              <span>Browse units by tower and floor</span>
-              <b>Open</b>
+              <strong>Direktori Penyewa</strong>
+              <span>Cari, filter, impor, dan kelola data penyewa</span>
+              <b>Buka</b>
             </button>
           </div>
           <div className="workspace-card completeness-card">
             <div className="section-heading">
               <div>
-                <h2>Data completeness</h2>
-                <p className="muted">Required tenant detail fields</p>
+                <h2>Kelengkapan data</h2>
+                <p className="muted">Kolom detail penyewa yang wajib diisi</p>
               </div>
               <strong className="percentage-value">{completeness}%</strong>
             </div>
@@ -129,18 +138,26 @@ export function DashboardOverview({
             <div className="quality-row">
               <span className="quality-icon orange-bg">!</span>
               <div>
-                <strong>{incomplete} records need review</strong>
+                <strong>{incomplete} data perlu ditinjau</strong>
                 <small>
-                  Missing phone, email, emergency, parking, or power
+                  No. telepon, email, kontak darurat, parkir, atau daya belum
+                  lengkap
                 </small>
               </div>
             </div>
             <button className="secondary-button" onClick={onOpenDirectory}>
-              Review records
+              Tinjau data
             </button>
           </div>
         </section>
       </main>
+      {aboutOpen && (
+        <AboutModal
+          updateVersion={updateVersion}
+          onClose={() => setAboutOpen(false)}
+          onInstallUpdate={onInstallUpdate}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,10 @@
-export type TenantStatus = "Active" | "Review";
+export type TenantStatus =
+  | "Active"
+  | "Review"
+  | "Pending"
+  | "Vacant"
+  | "Expired"
+  | "Suspended";
 
 export type Tenant = {
   // Core Tenant Relation detail columns.

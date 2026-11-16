@@ -31,10 +31,10 @@ export async function parseExcelFile(file: File): Promise<ImportPreview> {
   const text = await file.text();
   const document = new DOMParser().parseFromString(text, "text/html");
   const table = document.querySelector("table");
-  if (!table) throw new Error("No table was found. Please choose the exported tenant Excel file.");
+  if (!table) throw new Error("Tabel tidak ditemukan. Pilih file Excel penyewa yang telah diekspor.");
   const headers = [...table.querySelectorAll("tr:first-child th, tr:first-child td")].map((cell) => clean(cell.textContent));
   const rawRows = [...table.querySelectorAll("tr")].slice(1).map((tr) => [...tr.querySelectorAll("td")].map((cell) => clean(cell.textContent))).filter((row) => row.some(Boolean));
-  if (!headers.length || !rawRows.length) throw new Error("The selected file does not contain tenant rows.");
+  if (!headers.length || !rawRows.length) throw new Error("File yang dipilih tidak berisi baris data penyewa.");
   const rows = rawRows.map((values, index): Tenant => {
     const raw = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex] ?? ""]));
     const unit = find(raw, ["unitproperti", "nounit", "unit"]);

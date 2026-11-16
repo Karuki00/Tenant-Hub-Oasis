@@ -7,6 +7,7 @@ import { parseExcelFile, type ImportPreview } from "../services/excelImport";
 import { TenantFormModal } from "../components/TenantFormModal";
 import { Pagination } from "../components/Pagination";
 import { DashboardOverview } from "./DashboardOverview";
+import { AboutModal } from "../components/AboutModal";
 
 export function DashboardPage({
   tenants,
@@ -18,6 +19,9 @@ export function DashboardPage({
   onUpdate,
   onDelete,
   onArchive,
+  onLogout,
+  updateVersion,
+  onInstallUpdate,
 }: {
   tenants: Tenant[];
   view: "dashboard" | "directory";
@@ -28,10 +32,14 @@ export function DashboardPage({
   onUpdate: (tenant: Tenant) => void;
   onDelete: (code: string) => void;
   onArchive: (tenant: Tenant) => void;
+  onLogout: () => void;
+  updateVersion?: string;
+  onInstallUpdate: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [tower, setTower] = useState("All towers");
   const [floor, setFloor] = useState("All floors");
+  const [status, setStatus] = useState("All statuses");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<Tenant | null>(null);
@@ -39,6 +47,11 @@ export function DashboardPage({
   const [importError, setImportError] = useState("");
   const [formTenant, setFormTenant] = useState<Tenant | null | undefined>(
     undefined,
+  );
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const floorOptions = useMemo(
+    () => Array.from(new Set(tenants.map((tenant) => floorLabel(tenant.unit)).filter((value) => value !== "Lantai tidak diketahui"))).sort(),
+    [tenants],
   );
   const filtered = useMemo(
     () =>
@@ -53,36 +66,32 @@ export function DashboardPage({
         ]
           .join(" ")
           .toLowerCase();
-        const tenantFloor = `Floor ${tenant.unit.split("/")[1]}`;
+        const tenantTower = towerLabel(tenant);
+        const tenantFloor = floorLabel(tenant.unit);
         return (
           searchable.includes(query.toLowerCase()) &&
-          (tower === "All towers" || tenant.tower === tower) &&
-          (floor === "All floors" || tenantFloor === floor)
+          (tower === "All towers" || tenantTower === tower) &&
+          (floor === "All floors" || tenantFloor === floor) &&
+          (status === "All statuses" || tenant.status === status)
         );
       }),
-    [query, tower, floor, tenants],
+    [query, tower, floor, status, tenants],
   );
   useEffect(() => {
     setPage(1);
-  }, [query, tower, floor]);
+  }, [query, tower, floor, status]);
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
   if (view === "dashboard")
     return (
       <DashboardOverview
         tenants={tenants}
         databaseError={databaseError}
+        updateVersion={updateVersion}
+        onInstallUpdate={onInstallUpdate}
+        onLogout={onLogout}
         onOpenDirectory={() => onViewChange("directory")}
       />
     );
-  const missingCount = tenants.filter(
-    (tenant) =>
-      !tenant.email ||
-      !tenant.emergency ||
-      !tenant.phone ||
-      !tenant.parking ||
-      tenant.power <= 0,
-  ).length;
-  const totalArea = tenants.reduce((sum, tenant) => sum + tenant.area, 0);
   const handleFile = async (file?: File) => {
     if (!file) return;
     setImportError("");
@@ -90,7 +99,7 @@ export function DashboardPage({
       setPreview(await parseExcelFile(file));
     } catch (error) {
       setImportError(
-        error instanceof Error ? error.message : "Unable to read this file.",
+        error instanceof Error ? error.message : "File tidak dapat dibaca.",
       );
     }
   };
@@ -121,7 +130,7 @@ export function DashboardPage({
         !Array.isArray(rows) ||
         !rows.every((row) => row.code && row.unit && row.name)
       )
-        throw new Error("This backup does not contain valid tenant records.");
+        throw new Error("Cadangan ini tidak berisi data penyewa yang valid.");
       if (
         window.confirm(
           `Restore ${rows.length} tenant records and replace the current database?`,
@@ -132,7 +141,7 @@ export function DashboardPage({
       setImportError(
         error instanceof Error
           ? error.message
-          : "Unable to restore this backup.",
+          : "Cadangan tidak dapat dipulihkan.",
       );
     }
   };
@@ -146,17 +155,17 @@ export function DashboardPage({
             className="nav-item"
             onClick={() => onViewChange("dashboard")}
           >
-            Dashboard
+            Dasbor
           </button>
-          <button className="nav-item active">Tenant directory</button>
-          <button className="nav-item">Units and floors</button>
+          <button className="nav-item active">Direktori penyewa</button>
         </nav>
         <div className="sidebar-bottom">
           <div className="sync-card">
-            <span className="online-dot" /> Local data synced
-            <small>Last checked just now</small>
+            <span className="online-dot" /> Database SQLite tersinkron
+            <small>Terakhir diperiksa baru saja</small>
           </div>
-          <button className="nav-item">Settings</button>
+          <button className="nav-item">Pengaturan</button>
+          <button className="nav-item logout-button" onClick={onLogout}>Keluar</button>
           <div className="user-card">
             <span className="avatar">TR</span>
             <div>
@@ -169,68 +178,36 @@ export function DashboardPage({
       <main className="main-content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Monday, 16 November 2026</p>
-            <h1>Good morning, Tenant Relation</h1>
-            <p className="muted">Here is today's tenant overview.</p>
+            <p className="eyebrow">Tenant Relation</p>
+            <h1>Direktori Penyewa</h1>
+            <p className="muted">Kelola data penyewa, impor Excel, dan lakukan CRUD.</p>
           </div>
           <div className="top-actions">
-            <button className="icon-button" title="Check for updates">
-              Refresh
-            </button>
+            <button className={`version-button ${updateVersion ? "update-available" : ""}`} onClick={() => setAboutOpen(true)}>v0.1.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}</button>
             <button
               className="primary-button"
               onClick={() => setFormTenant(null)}
             >
-              Add tenant
+              Tambah penyewa
             </button>
           </div>
         </header>
         {databaseError && (
           <div className="import-error">
-            Database unavailable: {databaseError}
+            Database tidak tersedia: {databaseError}
           </div>
         )}
-        <section className="stats-grid">
-          <Stat
-            label="Total tenants"
-            value={String(tenants.length)}
-            change={
-              tenants.length ? "Imported records" : "Import an Excel file"
-            }
-            tone="blue"
-          />
-          <Stat
-            label="Occupied units"
-            value={String(
-              tenants.filter((tenant) => tenant.status === "Active").length,
-            )}
-            change={tenants.length ? "Active records" : "Waiting for data"}
-            tone="green"
-          />
-          <Stat
-            label="Total area"
-            value={`${totalArea.toLocaleString(undefined, { maximumFractionDigits: 1 })} m2`}
-            change={tenants.length ? "Imported area" : "No data loaded"}
-            tone="orange"
-          />
-          <Stat
-            label="Needs review"
-            value={String(missingCount)}
-            change="Incomplete detail fields"
-            tone="red"
-          />
-        </section>
         <section className="workspace-card">
           <div className="section-heading">
             <div>
-              <h2>Tenant directory</h2>
+              <h2>Direktori penyewa</h2>
               <p className="muted">
-                Search and filter tenant information by unit, floor, or tower.
+                Cari dan filter data penyewa berdasarkan unit, lantai, atau tower.
               </p>
             </div>
             <div className="directory-actions">
               <label className="secondary-button import-button">
-                Import
+                Impor
                 <input
                   type="file"
                   accept=".xls,.html,.csv,text/html,text/csv"
@@ -241,10 +218,10 @@ export function DashboardPage({
                 />
               </label>
               <button className="secondary-button" onClick={downloadBackup}>
-                Backup
+                Cadangkan
               </button>
               <label className="secondary-button import-button">
-                Restore
+                Pulihkan
                 <input
                   type="file"
                   accept=".json,application/json"
@@ -254,23 +231,23 @@ export function DashboardPage({
                   }}
                 />
               </label>
-              <button className="secondary-button">Export</button>
+              <button className="secondary-button">Ekspor</button>
             </div>
           </div>
           <div className="filter-row">
             <label className="search-box">
-              Search{" "}
+              Cari{" "}
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search name, unit, phone, email..."
+                placeholder="Cari nama, unit, telepon, email..."
               />
             </label>
             <select
               value={tower}
               onChange={(event) => setTower(event.target.value)}
             >
-              <option>All towers</option>
+              <option value="All towers">Semua tower</option>
               <option>Tower A</option>
               <option>Tower B</option>
               <option>Tower C</option>
@@ -279,23 +256,30 @@ export function DashboardPage({
               value={floor}
               onChange={(event) => setFloor(event.target.value)}
             >
-              <option>All floors</option>
-              <option>Floor 02</option>
-              <option>Floor 05</option>
-              <option>Floor 12</option>
+              <option value="All floors">Semua lantai</option>
+              {floorOptions.map((option) => <option key={option}>{option}</option>)}
             </select>
-            <button className="filter-button">Filters</button>
+            <select value={status} onChange={(event) => setStatus(event.target.value)}>
+              <option value="All statuses">Semua status</option>
+              <option value="Active">Aktif</option>
+              <option value="Review">Perlu ditinjau</option>
+              <option value="Pending">Menunggu</option>
+              <option value="Vacant">Kosong</option>
+              <option value="Expired">Kedaluwarsa</option>
+              <option value="Suspended">Ditangguhkan</option>
+            </select>
+            <button className="filter-button">Filter</button>
           </div>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Unit</th>
-                  <th>Tenant</th>
-                  <th>Location</th>
-                  <th>Area / power</th>
-                  <th>Phone</th>
-                  <th>Parking</th>
+                  <th>Penyewa</th>
+                  <th>Lokasi</th>
+                  <th>Luas / daya</th>
+                  <th>No. telepon</th>
+                  <th>No. parkir</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -308,11 +292,11 @@ export function DashboardPage({
                     </td>
                     <td>
                       <strong>{tenant.name}</strong>
-                      <small>{tenant.email || "Missing email"}</small>
+                      <small>{tenant.email || "Email belum diisi"}</small>
                     </td>
                     <td>
                       {tenant.tower}
-                      <small>Floor {tenant.unit.split("/")[1]}</small>
+                      <small>{floorLabel(tenant.unit)}</small>
                     </td>
                     <td>
                       {tenant.area.toFixed(1)} m2
@@ -322,7 +306,7 @@ export function DashboardPage({
                     <td>{tenant.parking}</td>
                     <td>
                       <span className={`status ${tenant.status.toLowerCase()}`}>
-                        {tenant.status}
+                        {statusLabel(tenant.status)}
                       </span>
                     </td>
                   </tr>
@@ -344,46 +328,6 @@ export function DashboardPage({
             }}
           />
         </section>
-        <section className="bottom-grid">
-          <div className="small-card">
-            <div className="section-heading">
-              <div>
-                <h2>Browse by tower</h2>
-                <p className="muted">Quick access to units and floors</p>
-              </div>
-            </div>
-            <div className="tower-list">
-              <Tower name="Tower A" units="171 units" color="blue" />
-              <Tower name="Tower B" units="170 units" color="purple" />
-              <Tower name="Tower C" units="170 units" color="orange" />
-            </div>
-          </div>
-          <div className="small-card">
-            <div className="section-heading">
-              <div>
-                <h2>Data quality</h2>
-                <p className="muted">Records requiring attention</p>
-              </div>
-              <span className="warning-count">26</span>
-            </div>
-            <div className="quality-row">
-              <span className="quality-icon red-bg">!</span>
-              <div>
-                <strong>Missing emergency contacts</strong>
-                <small>14 tenant records</small>
-              </div>
-              <span>View</span>
-            </div>
-            <div className="quality-row">
-              <span className="quality-icon orange-bg">!</span>
-              <div>
-                <strong>Missing email addresses</strong>
-                <small>12 tenant records</small>
-              </div>
-              <span>View</span>
-            </div>
-          </div>
-        </section>
       </main>
       {importError && <div className="import-error">{importError}</div>}
       {selected && (
@@ -395,7 +339,7 @@ export function DashboardPage({
             setSelected(null);
           }}
           onDelete={() => {
-            if (window.confirm(`Delete ${selected.name}?`)) {
+            if (window.confirm(`Hapus data ${selected.name}?`)) {
               onDelete(selected.code);
               setSelected(null);
             }
@@ -428,49 +372,22 @@ export function DashboardPage({
           }}
         />
       )}
+      {aboutOpen && <AboutModal updateVersion={updateVersion} onClose={() => setAboutOpen(false)} onInstallUpdate={onInstallUpdate} />}
     </div>
   );
 }
 
-function Stat({
-  label,
-  value,
-  change,
-  tone,
-}: {
-  label: string;
-  value: string;
-  change: string;
-  tone: string;
-}) {
-  return (
-    <div className="stat-card">
-      <div className={`stat-icon ${tone}`}>Info</div>
-      <p className="muted">{label}</p>
-      <strong>{value}</strong>
-      <small className={tone === "red" ? "alert-text" : "positive-text"}>
-        {change}
-      </small>
-    </div>
-  );
+function towerLabel(tenant: Tenant) {
+  const unitTower = tenant.unit.split("/")[0]?.trim().toUpperCase();
+  if (["A", "B", "C"].includes(unitTower)) return `Tower ${unitTower}`;
+  const source = tenant.tower.trim().toUpperCase();
+  const match = source.match(/(?:TOWER\s*)?([ABC])\b/);
+  return match ? `Tower ${match[1]}` : "Lainnya";
 }
-function Tower({
-  name,
-  units,
-  color,
-}: {
-  name: string;
-  units: string;
-  color: string;
-}) {
-  return (
-    <div className="tower-item">
-      <span className={`tower-icon ${color}`}>Floor</span>
-      <div>
-        <strong>{name}</strong>
-        <small>{units}</small>
-      </div>
-      <span className="arrow">Open</span>
-    </div>
-  );
+
+function floorLabel(unit: string) {
+  const floor = unit.split("/")[1]?.trim();
+  return floor ? `Floor ${floor.toUpperCase()}` : "Lantai tidak diketahui";
 }
+
+function statusLabel(status: Tenant["status"]) { return ({ Active: "Aktif", Review: "Perlu ditinjau", Pending: "Menunggu", Vacant: "Kosong", Expired: "Kedaluwarsa", Suspended: "Ditangguhkan" })[status]; }

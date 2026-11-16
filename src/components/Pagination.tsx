@@ -16,7 +16,7 @@ export function Pagination({
   return (
     <div className="pagination">
       <label>
-        Rows per page
+        Baris per halaman
         <select
           value={pageSize}
           onChange={(event) => onPageSizeChange(Number(event.target.value))}
@@ -37,16 +37,16 @@ export function Pagination({
           disabled={safePage <= 1}
           onClick={() => onPageChange(safePage - 1)}
         >
-          Previous
+          Sebelumnya
         </button>
         <span>
-          Page {safePage} of {pageCount}
+          Halaman {safePage} dari {pageCount}
         </span>
         <button
           disabled={safePage >= pageCount}
           onClick={() => onPageChange(safePage + 1)}
         >
-          Next
+          Berikutnya
         </button>
       </div>
     </div>

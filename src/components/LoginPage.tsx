@@ -9,7 +9,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!username.trim() || !password.trim()) {
-      setError("Please enter your username and password.");
+      setError("Silakan masukkan nama pengguna dan kata sandi.");
       return;
     }
     onLogin();
@@ -23,44 +23,42 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
           alt="Oasis Apartment Mitra Sarana"
         />
         <h1>OASIS Enterprise Hub</h1>
-        <p className="login-subtitle">
-          Please sign in with your department credentials
-        </p>
+        <p className="login-subtitle">Masuk dengan kredensial divisi Anda</p>
         <label>
-          Username
+          Nama pengguna
           <input
             autoComplete="username"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            placeholder="Enter your username"
+            placeholder="Masukkan nama pengguna"
           />
         </label>
         <label>
-          Password
+          Kata sandi
           <input
             autoComplete="current-password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Enter your password"
+            placeholder="Masukkan kata sandi"
           />
         </label>
         <div className="login-options">
           <label>
-            <input type="checkbox" /> Remember me
+            <input type="checkbox" /> Ingat saya
           </label>
           <div>
-            <button type="button">Forgot username?</button>
-            <button type="button">Reset password</button>
+            <button type="button">Lupa nama pengguna?</button>
+            <button type="button">Atur ulang kata sandi</button>
           </div>
         </div>
         {error && <p className="login-error">{error}</p>}
         <button className="primary-button login-submit" type="submit">
-          Log In
+          Login
         </button>
         {import.meta.env.DEV && (
           <button className="quick-login" type="button" onClick={onLogin}>
-            Quick development login
+            Masuk cepat untuk pengembangan
           </button>
         )}
       </form>

@@ -23,6 +23,8 @@ The project is currently in development. Do not assign or announce a release ver
 - [x] Define the eight core detail columns: No. Unit, Nama, Luas, Daya, No. tlp, Email, No. tlp keadaan darurat, and No Parkir
 - [x] Preserve Excel summary fields: Kode Tenant, Lokasi, and Periode Huni
 - [x] Add Active/Review status
+- [x] Add Pending, Vacant, Expired, and Suspended statuses
+- [x] Add status filtering in Tenant Directory
 - [x] Add archive/restore state
 
 ### Excel import
@@ -52,6 +54,7 @@ The project is currently in development. Do not assign or announce a release ver
 - [x] Add initial tenant schema
 - [x] Add database indexes for unit, tower, and tenant name
 - [x] Add migration for tenant archiving
+- [x] Add migration for expanded tenant statuses
 - [x] Add database service for load, replace, create, update, delete, and archive operations
 - [x] Add JSON database backup and restore through Tenant Directory
 - [ ] Complete packaged Tauri database testing

@@ -4,6 +4,7 @@ import "./App.css";
 import "./theme.css";
 import { LoginPage } from "./components/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { checkForUpdates, installAvailableUpdate } from "./updater";
 import {
   createTenant,
   deleteTenant,
@@ -18,17 +19,32 @@ function App() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [databaseError, setDatabaseError] = useState("");
   const [view, setView] = useState<"dashboard" | "directory">("dashboard");
+  const [updateVersion, setUpdateVersion] = useState<string | undefined>();
+  const reportDatabaseError = (error: unknown) => {
+    const message =
+      typeof error === "string"
+        ? error
+        : error instanceof Error
+          ? error.message
+          : error && typeof error === "object" && "message" in error
+            ? String(error.message)
+            : "Operasi database gagal.";
+    setDatabaseError(message);
+  };
+  useEffect(() => {
+    const checkUpdate = () => void checkForUpdates(setUpdateVersion);
+    checkUpdate();
+    const timer = window.setInterval(checkUpdate, 15 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
   useEffect(() => {
     if (!authenticated) return;
     void loadTenants()
-      .then(setTenants)
-      .catch((error) =>
-        setDatabaseError(
-          error instanceof Error
-            ? error.message
-            : "Unable to open the tenant database.",
-        ),
-      );
+      .then((rows) => {
+        setTenants(rows);
+        setDatabaseError("");
+      })
+      .catch(reportDatabaseError);
   }, [authenticated]);
   if (!authenticated)
     return <LoginPage onLogin={() => setAuthenticated(true)} />;
@@ -38,30 +54,66 @@ function App() {
         tenants={tenants}
         view={view}
         onViewChange={setView}
+        onLogout={() => {
+          setAuthenticated(false);
+          setTenants([]);
+          setView("dashboard");
+          setDatabaseError("");
+        }}
         databaseError={databaseError}
         onImport={(rows) => {
-          setTenants(rows);
-          void replaceTenants(rows);
+          void replaceTenants(rows)
+            .then(() => {
+              setTenants(rows);
+              setDatabaseError("");
+            })
+            .catch(reportDatabaseError);
         }}
         onCreate={(tenant) => {
-          setTenants((current) => [...current, tenant]);
-          void createTenant(tenant);
+          void createTenant(tenant)
+            .then(() => {
+              setTenants((current) => [...current, tenant]);
+              setDatabaseError("");
+            })
+            .catch(reportDatabaseError);
         }}
         onUpdate={(tenant) => {
-          setTenants((current) =>
-            current.map((item) => (item.code === tenant.code ? tenant : item)),
-          );
-          void updateTenant(tenant);
+          void updateTenant(tenant)
+            .then(() => {
+              setTenants((current) =>
+                current.map((item) =>
+                  item.code === tenant.code ? tenant : item,
+                ),
+              );
+              setDatabaseError("");
+            })
+            .catch(reportDatabaseError);
         }}
         onDelete={(code) => {
-          setTenants((current) => current.filter((item) => item.code !== code));
-          void deleteTenant(code);
+          void deleteTenant(code)
+            .then(() => {
+              setTenants((current) =>
+                current.filter((item) => item.code !== code),
+              );
+              setDatabaseError("");
+            })
+            .catch(reportDatabaseError);
         }}
         onArchive={(tenant) => {
-          setTenants((current) =>
-            current.map((item) => (item.code === tenant.code ? tenant : item)),
-          );
-          void setTenantArchived(tenant.code, tenant.archived);
+          void setTenantArchived(tenant.code, tenant.archived)
+            .then(() => {
+              setTenants((current) =>
+                current.map((item) =>
+                  item.code === tenant.code ? tenant : item,
+                ),
+              );
+              setDatabaseError("");
+            })
+            .catch(reportDatabaseError);
+        }}
+        updateVersion={updateVersion}
+        onInstallUpdate={() => {
+          void installAvailableUpdate();
         }}
       />
     </>
