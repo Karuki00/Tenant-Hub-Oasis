@@ -25,7 +25,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcwODcxOTY5NkRCMEJDN0MKUldSOHZMQnRhUm1IY0VBTkhWamtpSGswRXJLbWl2bmdTakNTdDMyQThYZkVCbVRyL1RsYlBUdEIK",
       "endpoints": [
-        "https://github.com/Karuki00/REPLACE_REPO/releases/latest/download/latest.json"
+        "https://github.com/Karuki00/Tenant-Hub-Oasis/releases/latest/download/latest.json"
       ]
     }
   },

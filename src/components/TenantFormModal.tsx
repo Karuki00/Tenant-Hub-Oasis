@@ -38,8 +38,15 @@ export function TenantFormModal({
     }));
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const duplicate = existingTenants.some((item) => item.unit.trim().toLowerCase() === form.unit.trim().toLowerCase() && item.code !== tenant?.code);
-    if (duplicate) { setError(`Unit ${form.unit} already exists. Choose a different unit.`); return; }
+    const duplicate = existingTenants.some(
+      (item) =>
+        item.unit.trim().toLowerCase() === form.unit.trim().toLowerCase() &&
+        item.code !== tenant?.code,
+    );
+    if (duplicate) {
+      setError(`Unit ${form.unit} already exists. Choose a different unit.`);
+      return;
+    }
     setError("");
     onSave({
       ...form,

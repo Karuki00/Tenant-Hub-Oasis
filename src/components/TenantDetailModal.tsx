@@ -46,7 +46,10 @@ export function TenantDetailModal({
             label="Periode Huni"
             value={tenant.occupancyPeriod || "Missing"}
           />
-          <Detail label="Status" value={tenant.archived ? "Archived" : tenant.status} />
+          <Detail
+            label="Status"
+            value={tenant.archived ? "Archived" : tenant.status}
+          />
         </div>
         <div className="detail-actions">
           <button className="secondary-button delete-button" onClick={onDelete}>

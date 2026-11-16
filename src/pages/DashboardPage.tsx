@@ -8,7 +8,27 @@ import { TenantFormModal } from "../components/TenantFormModal";
 import { Pagination } from "../components/Pagination";
 import { DashboardOverview } from "./DashboardOverview";
 
-export function DashboardPage({ tenants, view, onViewChange, databaseError, onImport, onCreate, onUpdate, onDelete, onArchive }: { tenants: Tenant[]; view: "dashboard" | "directory"; onViewChange: (view: "dashboard" | "directory") => void; databaseError?: string; onImport: (rows: Tenant[]) => void; onCreate: (tenant: Tenant) => void; onUpdate: (tenant: Tenant) => void; onDelete: (code: string) => void; onArchive: (tenant: Tenant) => void }) {
+export function DashboardPage({
+  tenants,
+  view,
+  onViewChange,
+  databaseError,
+  onImport,
+  onCreate,
+  onUpdate,
+  onDelete,
+  onArchive,
+}: {
+  tenants: Tenant[];
+  view: "dashboard" | "directory";
+  onViewChange: (view: "dashboard" | "directory") => void;
+  databaseError?: string;
+  onImport: (rows: Tenant[]) => void;
+  onCreate: (tenant: Tenant) => void;
+  onUpdate: (tenant: Tenant) => void;
+  onDelete: (code: string) => void;
+  onArchive: (tenant: Tenant) => void;
+}) {
   const [query, setQuery] = useState("");
   const [tower, setTower] = useState("All towers");
   const [floor, setFloor] = useState("All floors");
@@ -17,7 +37,9 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
   const [selected, setSelected] = useState<Tenant | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [importError, setImportError] = useState("");
-  const [formTenant, setFormTenant] = useState<Tenant | null | undefined>(undefined);
+  const [formTenant, setFormTenant] = useState<Tenant | null | undefined>(
+    undefined,
+  );
   const filtered = useMemo(
     () =>
       tenants.filter((tenant) => {
@@ -40,24 +62,79 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
       }),
     [query, tower, floor, tenants],
   );
-  useEffect(() => { setPage(1); }, [query, tower, floor]);
+  useEffect(() => {
+    setPage(1);
+  }, [query, tower, floor]);
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-  if (view === "dashboard") return <DashboardOverview tenants={tenants} databaseError={databaseError} onOpenDirectory={() => onViewChange("directory")} />;
-  const missingCount = tenants.filter((tenant) => !tenant.email || !tenant.emergency || !tenant.phone || !tenant.parking || tenant.power <= 0).length;
+  if (view === "dashboard")
+    return (
+      <DashboardOverview
+        tenants={tenants}
+        databaseError={databaseError}
+        onOpenDirectory={() => onViewChange("directory")}
+      />
+    );
+  const missingCount = tenants.filter(
+    (tenant) =>
+      !tenant.email ||
+      !tenant.emergency ||
+      !tenant.phone ||
+      !tenant.parking ||
+      tenant.power <= 0,
+  ).length;
   const totalArea = tenants.reduce((sum, tenant) => sum + tenant.area, 0);
   const handleFile = async (file?: File) => {
     if (!file) return;
     setImportError("");
-    try { setPreview(await parseExcelFile(file)); } catch (error) { setImportError(error instanceof Error ? error.message : "Unable to read this file."); }
+    try {
+      setPreview(await parseExcelFile(file));
+    } catch (error) {
+      setImportError(
+        error instanceof Error ? error.message : "Unable to read this file.",
+      );
+    }
   };
   const downloadBackup = () => {
-    const blob = new Blob([JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), tenants }, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `tenant-hub-backup-${new Date().toISOString().slice(0, 10)}.json`; link.click(); URL.revokeObjectURL(url);
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          { schemaVersion: 1, exportedAt: new Date().toISOString(), tenants },
+          null,
+          2,
+        ),
+      ],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `tenant-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
   const restoreBackup = async (file?: File) => {
     if (!file) return;
-    try { const parsed = JSON.parse(await file.text()); const rows = Array.isArray(parsed) ? parsed : parsed.tenants; if (!Array.isArray(rows) || !rows.every((row) => row.code && row.unit && row.name)) throw new Error("This backup does not contain valid tenant records."); if (window.confirm(`Restore ${rows.length} tenant records and replace the current database?`)) onImport(rows as Tenant[]); }
-    catch (error) { setImportError(error instanceof Error ? error.message : "Unable to restore this backup."); }
+    try {
+      const parsed = JSON.parse(await file.text());
+      const rows = Array.isArray(parsed) ? parsed : parsed.tenants;
+      if (
+        !Array.isArray(rows) ||
+        !rows.every((row) => row.code && row.unit && row.name)
+      )
+        throw new Error("This backup does not contain valid tenant records.");
+      if (
+        window.confirm(
+          `Restore ${rows.length} tenant records and replace the current database?`,
+        )
+      )
+        onImport(rows as Tenant[]);
+    } catch (error) {
+      setImportError(
+        error instanceof Error
+          ? error.message
+          : "Unable to restore this backup.",
+      );
+    }
   };
 
   return (
@@ -65,7 +142,12 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
       <aside className="sidebar">
         <Brand />
         <nav>
-          <button className="nav-item" onClick={() => onViewChange("dashboard")}>Dashboard</button>
+          <button
+            className="nav-item"
+            onClick={() => onViewChange("dashboard")}
+          >
+            Dashboard
+          </button>
           <button className="nav-item active">Tenant directory</button>
           <button className="nav-item">Units and floors</button>
         </nav>
@@ -95,20 +177,33 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
             <button className="icon-button" title="Check for updates">
               Refresh
             </button>
-            <button className="primary-button" onClick={() => setFormTenant(null)}>Add tenant</button>
+            <button
+              className="primary-button"
+              onClick={() => setFormTenant(null)}
+            >
+              Add tenant
+            </button>
           </div>
         </header>
-        {databaseError && <div className="import-error">Database unavailable: {databaseError}</div>}
+        {databaseError && (
+          <div className="import-error">
+            Database unavailable: {databaseError}
+          </div>
+        )}
         <section className="stats-grid">
           <Stat
             label="Total tenants"
             value={String(tenants.length)}
-            change={tenants.length ? "Imported records" : "Import an Excel file"}
+            change={
+              tenants.length ? "Imported records" : "Import an Excel file"
+            }
             tone="blue"
           />
           <Stat
             label="Occupied units"
-            value={String(tenants.filter((tenant) => tenant.status === "Active").length)}
+            value={String(
+              tenants.filter((tenant) => tenant.status === "Active").length,
+            )}
             change={tenants.length ? "Active records" : "Waiting for data"}
             tone="green"
           />
@@ -133,7 +228,34 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
                 Search and filter tenant information by unit, floor, or tower.
               </p>
             </div>
-            <div className="directory-actions"><label className="secondary-button import-button">Import<input type="file" accept=".xls,.html,.csv,text/html,text/csv" onChange={(event) => { void handleFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label><button className="secondary-button" onClick={downloadBackup}>Backup</button><label className="secondary-button import-button">Restore<input type="file" accept=".json,application/json" onChange={(event) => { void restoreBackup(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label><button className="secondary-button">Export</button></div>
+            <div className="directory-actions">
+              <label className="secondary-button import-button">
+                Import
+                <input
+                  type="file"
+                  accept=".xls,.html,.csv,text/html,text/csv"
+                  onChange={(event) => {
+                    void handleFile(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              <button className="secondary-button" onClick={downloadBackup}>
+                Backup
+              </button>
+              <label className="secondary-button import-button">
+                Restore
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(event) => {
+                    void restoreBackup(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              <button className="secondary-button">Export</button>
+            </div>
           </div>
           <div className="filter-row">
             <label className="search-box">
@@ -211,7 +333,16 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
           {filtered.length === 0 && (
             <div className="empty-state">No tenants match your search.</div>
           )}
-          <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={filtered.length}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
         </section>
         <section className="bottom-grid">
           <div className="small-card">
@@ -259,13 +390,44 @@ export function DashboardPage({ tenants, view, onViewChange, databaseError, onIm
         <TenantDetailModal
           tenant={selected}
           onClose={() => setSelected(null)}
-          onEdit={() => { setFormTenant(selected); setSelected(null); }}
-          onDelete={() => { if (window.confirm(`Delete ${selected.name}?`)) { onDelete(selected.code); setSelected(null); } }}
-          onArchive={() => { onArchive({ ...selected, archived: !selected.archived }); setSelected(null); }}
+          onEdit={() => {
+            setFormTenant(selected);
+            setSelected(null);
+          }}
+          onDelete={() => {
+            if (window.confirm(`Delete ${selected.name}?`)) {
+              onDelete(selected.code);
+              setSelected(null);
+            }
+          }}
+          onArchive={() => {
+            onArchive({ ...selected, archived: !selected.archived });
+            setSelected(null);
+          }}
         />
       )}
-      {preview && <ImportPreviewModal preview={preview} onCancel={() => setPreview(null)} onConfirm={() => { onImport(preview.rows); setPreview(null); }} />}
-      {formTenant !== undefined && <TenantFormModal tenant={formTenant} existingTenants={tenants} onClose={() => setFormTenant(undefined)} onSave={(tenant) => { if (formTenant) onUpdate(tenant); else onCreate(tenant); setFormTenant(undefined); }} />}
+      {preview && (
+        <ImportPreviewModal
+          preview={preview}
+          onCancel={() => setPreview(null)}
+          onConfirm={() => {
+            onImport(preview.rows);
+            setPreview(null);
+          }}
+        />
+      )}
+      {formTenant !== undefined && (
+        <TenantFormModal
+          tenant={formTenant}
+          existingTenants={tenants}
+          onClose={() => setFormTenant(undefined)}
+          onSave={(tenant) => {
+            if (formTenant) onUpdate(tenant);
+            else onCreate(tenant);
+            setFormTenant(undefined);
+          }}
+        />
+      )}
     </div>
   );
 }
