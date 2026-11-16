@@ -7,3 +7,5 @@ export const createTenant = (tenant: Tenant) => invoke<void>("create_tenant", { 
 export const updateTenant = (tenant: Tenant) => invoke<void>("update_tenant", { tenant });
 export const deleteTenant = (code: string) => invoke<void>("delete_tenant", { code });
 export const setTenantArchived = (code: string, archived: boolean) => invoke<void>("set_tenant_archived", { code, archived });
+export const saveExportFile = (filename: string, contents: string) => invoke<string>("save_export_file", { filename, contents });
+export const exportTenantsXlsx = () => invoke<string>("export_tenants_xlsx");

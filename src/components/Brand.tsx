@@ -8,7 +8,7 @@ export function Brand() {
         src={oasisLogo}
         alt="Oasis Apartment Mitra Sarana"
       />
-      <div>
+      <div className="brand-copy">
         <strong>TenantHub</strong>
         <small>Tenant Relation</small>
       </div>

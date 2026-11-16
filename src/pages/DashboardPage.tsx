@@ -8,18 +8,7 @@ import { TenantFormModal } from "../components/TenantFormModal";
 import { Pagination } from "../components/Pagination";
 import { DashboardOverview } from "./DashboardOverview";
 import { AboutModal } from "../components/AboutModal";
-
-function downloadFile(fileName: string, content: string, type: string) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-}
+import { exportTenantsXlsx, saveExportFile } from "../services/tenantDatabase";
 
 export function DashboardPage({
   tenants,
@@ -57,6 +46,7 @@ export function DashboardPage({
   const [selected, setSelected] = useState<Tenant | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [importError, setImportError] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
   const [formTenant, setFormTenant] = useState<Tenant | null | undefined>(
     undefined,
   );
@@ -116,17 +106,15 @@ export function DashboardPage({
     }
   };
   const downloadBackup = () => {
-    downloadFile(
+    void saveExportFile(
       `tenant-hub-backup-${new Date().toISOString().slice(0, 10)}.json`,
       JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), tenants }, null, 2),
-      "application/json",
-    );
+    ).then((path) => setExportMessage(`Cadangan tersimpan di ${path}`)).catch((error) => setImportError(error instanceof Error ? error.message : String(error)));
   };
-  const exportCsv = () => {
-    const headers = ["Kode Tenant", "No. Unit", "Nama", "Luas", "Daya", "No. tlp", "Email", "No. tlp keadaan darurat", "No Parkir", "Tower", "Periode Huni", "Status"];
-    const cell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
-    const rows = filtered.map((tenant) => [tenant.code, tenant.unit, tenant.name, tenant.area, tenant.power, tenant.phone, tenant.email, tenant.emergency, tenant.parking, tenant.tower, tenant.occupancyPeriod, tenant.status].map(cell).join(","));
-    downloadFile(`tenant-hub-export-${new Date().toISOString().slice(0, 10)}.csv`, `\uFEFF${[headers.map(cell).join(","), ...rows].join("\n")}`, "text/csv;charset=utf-8");
+  const exportExcel = () => {
+    void exportTenantsXlsx()
+      .then((path) => setExportMessage(`Ekspor Excel tersimpan di ${path}`))
+      .catch((error) => setImportError(error instanceof Error ? error.message : String(error)));
   };
   const restoreBackup = async (file?: File) => {
     if (!file) return;
@@ -204,6 +192,7 @@ export function DashboardPage({
             Database tidak tersedia: {databaseError}
           </div>
         )}
+        {exportMessage && <div className="export-success">{exportMessage}</div>}
         <section className="workspace-card">
           <div className="section-heading">
             <div>
@@ -238,7 +227,7 @@ export function DashboardPage({
                   }}
                 />
               </label>
-              <button className="secondary-button" onClick={exportCsv}>Ekspor</button>
+              <button className="secondary-button" onClick={exportExcel}>Ekspor Excel</button>
             </div>
           </div>
           <div className="filter-row">

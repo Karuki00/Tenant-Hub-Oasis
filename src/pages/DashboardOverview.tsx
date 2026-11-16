@@ -62,7 +62,7 @@ export function DashboardOverview({
         <header className="topbar">
           <div>
             <p className="eyebrow">Ruang kerja Tenant Relation</p>
-            <h1>Dasbor</h1>
+            <h1>Dashboard</h1>
             <p className="muted">
               Akses cepat dan kondisi data secara ringkas.
             </p>

@@ -1,6 +1,7 @@
 use rusqlite::{params, Connection, OptionalExtension};
+use rust_xlsxwriter::Workbook;
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf};
+use std::{fs, path::{Path, PathBuf}};
 use tauri::{AppHandle, Manager};
 
 const MIGRATION_1: &str = r#"
@@ -210,6 +211,69 @@ fn set_tenant_archived(app: AppHandle, code: String, archived: bool) -> Result<(
         .map(|_| ())
 }
 
+#[tauri::command]
+fn save_export_file(app: AppHandle, filename: String, contents: String) -> Result<String, String> {
+    let safe_filename = Path::new(&filename)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty())
+        .ok_or_else(|| "Nama file ekspor tidak valid.".to_string())?;
+    let directory = app
+        .path()
+        .download_dir()
+        .map_err(|error| error.to_string())?;
+    fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+    let path = directory.join(safe_filename);
+    fs::write(&path, contents).map_err(|error| error.to_string())?;
+    Ok(path.display().to_string())
+}
+
+#[tauri::command]
+fn export_tenants_xlsx(app: AppHandle) -> Result<String, String> {
+    let tenants = load_tenants(app.clone())?;
+    let path = rfd::FileDialog::new()
+        .set_title("Simpan ekspor TenantHub")
+        .set_file_name("tenant-hub-export.xlsx")
+        .add_filter("Excel Workbook", &["xlsx"])
+        .save_file()
+        .ok_or_else(|| "Ekspor dibatalkan oleh pengguna.".to_string())?;
+    let path = if path.extension().is_some() {
+        path
+    } else {
+        path.with_extension("xlsx")
+    };
+
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+    let headers = [
+        "Kode Tenant", "No. Unit", "Nama", "Luas", "Daya", "No. tlp", "Email",
+        "No. tlp keadaan darurat", "No Parkir", "Tower", "Periode Huni", "Status",
+    ];
+    for (column, header) in headers.iter().enumerate() {
+        worksheet
+            .write_string(0, column as u16, *header)
+            .map_err(|error| error.to_string())?;
+    }
+    for (row, tenant) in tenants.iter().enumerate() {
+        let row = (row + 1) as u32;
+        worksheet.write_string(row, 0, &tenant.code).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 1, &tenant.unit).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 2, &tenant.name).map_err(|error| error.to_string())?;
+        worksheet.write_number(row, 3, tenant.area).map_err(|error| error.to_string())?;
+        worksheet.write_number(row, 4, tenant.power as f64).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 5, &tenant.phone).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 6, &tenant.email).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 7, &tenant.emergency).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 8, &tenant.parking).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 9, &tenant.tower).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 10, &tenant.occupancy_period).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 11, &tenant.status).map_err(|error| error.to_string())?;
+    }
+    worksheet.set_freeze_panes(1, 0).map_err(|error| error.to_string())?;
+    workbook.save(&path).map_err(|error| error.to_string())?;
+    Ok(path.display().to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -226,7 +290,9 @@ pub fn run() {
             create_tenant,
             update_tenant,
             delete_tenant,
-            set_tenant_archived
+            set_tenant_archived,
+            save_export_file,
+            export_tenants_xlsx
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
