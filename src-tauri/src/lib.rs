@@ -1,7 +1,7 @@
 use rusqlite::{params, Connection, OptionalExtension};
 use rust_xlsxwriter::Workbook;
 use serde::{Deserialize, Serialize};
-use std::{fs, path::{Path, PathBuf}};
+use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
 const MIGRATION_1: &str = r#"
@@ -200,35 +200,6 @@ fn delete_tenant(app: AppHandle, code: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn set_tenant_archived(app: AppHandle, code: String, archived: bool) -> Result<(), String> {
-    let connection = connection(&app)?;
-    connection
-        .execute(
-            "UPDATE tenants SET archived=?, updated_at=CURRENT_TIMESTAMP WHERE code=?",
-            params![archived as i64, code],
-        )
-        .map_err(|error| error.to_string())
-        .map(|_| ())
-}
-
-#[tauri::command]
-fn save_export_file(app: AppHandle, filename: String, contents: String) -> Result<String, String> {
-    let safe_filename = Path::new(&filename)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .filter(|name| !name.is_empty())
-        .ok_or_else(|| "Nama file ekspor tidak valid.".to_string())?;
-    let directory = app
-        .path()
-        .download_dir()
-        .map_err(|error| error.to_string())?;
-    fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
-    let path = directory.join(safe_filename);
-    fs::write(&path, contents).map_err(|error| error.to_string())?;
-    Ok(path.display().to_string())
-}
-
-#[tauri::command]
 fn export_tenants_xlsx(app: AppHandle) -> Result<String, String> {
     let tenants = load_tenants(app.clone())?;
     let path = rfd::FileDialog::new()
@@ -290,8 +261,6 @@ pub fn run() {
             create_tenant,
             update_tenant,
             delete_tenant,
-            set_tenant_archived,
-            save_export_file,
             export_tenants_xlsx
         ])
         .run(tauri::generate_context!())

@@ -180,8 +180,7 @@ button {
 }
 .primary-button,
 .secondary-button,
-.icon-button,
-.filter-button {
+.icon-button {
   min-height: 42px;
   border-radius: 9px;
   padding: 0 16px;
@@ -198,8 +197,7 @@ button {
   background: #3f62d2;
 }
 .secondary-button,
-.icon-button,
-.filter-button {
+.icon-button {
   border: 1px solid #dfe6f0;
   color: #566275;
   background: #ffffffb8;
@@ -328,9 +326,6 @@ button {
   color: #566275;
   background: #ffffffb8;
   font-size: 13px;
-}
-.filter-button {
-  min-height: 42px;
 }
 .table-wrap {
   overflow-x: auto;
@@ -665,8 +660,7 @@ td small {
   .search-box {
     flex-basis: 100%;
   }
-  .filter-row select,
-  .filter-button {
+  .filter-row select {
     flex: 1;
     min-width: 0;
   }

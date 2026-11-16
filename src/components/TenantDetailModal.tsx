@@ -5,13 +5,11 @@ export function TenantDetailModal({
   onClose,
   onEdit,
   onDelete,
-  onArchive,
 }: {
   tenant: Tenant;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onArchive: () => void;
 }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -48,15 +46,12 @@ export function TenantDetailModal({
           />
           <Detail
             label="Status"
-            value={tenant.archived ? "Diarsipkan" : statusLabel(tenant.status)}
+            value={statusLabel(tenant.status)}
           />
         </div>
         <div className="detail-actions">
           <button className="secondary-button delete-button" onClick={onDelete}>
             Hapus
-          </button>
-          <button className="secondary-button" onClick={onArchive}>
-            {tenant.archived ? "Pulihkan" : "Arsipkan"}
           </button>
           <button className="primary-button" onClick={onEdit}>
             Edit penyewa

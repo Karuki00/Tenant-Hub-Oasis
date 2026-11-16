@@ -8,7 +8,7 @@ import { TenantFormModal } from "../components/TenantFormModal";
 import { Pagination } from "../components/Pagination";
 import { DashboardOverview } from "./DashboardOverview";
 import { AboutModal } from "../components/AboutModal";
-import { exportTenantsXlsx, saveExportFile } from "../services/tenantDatabase";
+import { exportTenantsXlsx } from "../services/tenantDatabase";
 
 export function DashboardPage({
   tenants,
@@ -19,7 +19,6 @@ export function DashboardPage({
   onCreate,
   onUpdate,
   onDelete,
-  onArchive,
   onLogout,
   updateVersion,
   onInstallUpdate,
@@ -32,7 +31,6 @@ export function DashboardPage({
   onCreate: (tenant: Tenant) => void;
   onUpdate: (tenant: Tenant) => void;
   onDelete: (code: string) => void;
-  onArchive: (tenant: Tenant) => void;
   onLogout: () => void;
   updateVersion?: string;
   onInstallUpdate: () => void;
@@ -105,40 +103,10 @@ export function DashboardPage({
       );
     }
   };
-  const downloadBackup = () => {
-    void saveExportFile(
-      `tenant-hub-backup-${new Date().toISOString().slice(0, 10)}.json`,
-      JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), tenants }, null, 2),
-    ).then((path) => setExportMessage(`Cadangan tersimpan di ${path}`)).catch((error) => setImportError(error instanceof Error ? error.message : String(error)));
-  };
   const exportExcel = () => {
     void exportTenantsXlsx()
       .then((path) => setExportMessage(`Ekspor Excel tersimpan di ${path}`))
       .catch((error) => setImportError(error instanceof Error ? error.message : String(error)));
-  };
-  const restoreBackup = async (file?: File) => {
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      const rows = Array.isArray(parsed) ? parsed : parsed.tenants;
-      if (
-        !Array.isArray(rows) ||
-        !rows.every((row) => row.code && row.unit && row.name)
-      )
-        throw new Error("Cadangan ini tidak berisi data penyewa yang valid.");
-      if (
-        window.confirm(
-          `Restore ${rows.length} tenant records and replace the current database?`,
-        )
-      )
-        onImport(rows as Tenant[]);
-    } catch (error) {
-      setImportError(
-        error instanceof Error
-          ? error.message
-          : "Cadangan tidak dapat dipulihkan.",
-      );
-    }
   };
 
   return (
@@ -213,20 +181,6 @@ export function DashboardPage({
                   }}
                 />
               </label>
-              <button className="secondary-button" onClick={downloadBackup}>
-                Cadangkan
-              </button>
-              <label className="secondary-button import-button">
-                Pulihkan
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  onChange={(event) => {
-                    void restoreBackup(event.target.files?.[0]);
-                    event.currentTarget.value = "";
-                  }}
-                />
-              </label>
               <button className="secondary-button" onClick={exportExcel}>Ekspor Excel</button>
             </div>
           </div>
@@ -264,7 +218,6 @@ export function DashboardPage({
               <option value="Expired">Kedaluwarsa</option>
               <option value="Suspended">Ditangguhkan</option>
             </select>
-            <button className="filter-button">Filter</button>
           </div>
           <div className="table-wrap">
             <table>
@@ -339,10 +292,6 @@ export function DashboardPage({
               onDelete(selected.code);
               setSelected(null);
             }
-          }}
-          onArchive={() => {
-            onArchive({ ...selected, archived: !selected.archived });
-            setSelected(null);
           }}
         />
       )}

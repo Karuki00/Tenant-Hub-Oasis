@@ -310,7 +310,6 @@ body {
 }
 .search-box,
 .filter-row select,
-.filter-button,
 .secondary-button {
   border-color: #bba982;
   background: #fff8ec;
@@ -1223,7 +1222,6 @@ body:has(.modal-backdrop) {
 .sidebar .brand small { color: #c7d7c5; }
 .primary-button,
 .secondary-button,
-.filter-button,
 .version-button,
 .import-button,
 .icon-button {
@@ -1234,7 +1232,6 @@ body:has(.modal-backdrop) {
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .secondary-button,
-.filter-button,
 .version-button,
 .import-button,
 .icon-button {
@@ -1248,7 +1245,6 @@ body:has(.modal-backdrop) {
 }
 .primary-button:hover,
 .secondary-button:hover,
-.filter-button:hover,
 .version-button:hover,
 .import-button:hover,
 .icon-button:hover {
@@ -1258,7 +1254,6 @@ body:has(.modal-backdrop) {
 .primary-button:hover { background: linear-gradient(135deg, #237354 0%, #086049 100%); }
 .primary-button:active,
 .secondary-button:active,
-.filter-button:active,
 .version-button:active,
 .import-button:active,
 .icon-button:active {

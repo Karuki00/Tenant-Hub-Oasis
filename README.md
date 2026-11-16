@@ -13,7 +13,7 @@ TenantHub is a Windows desktop application for the Tenant Relation department of
 - Tenant Relation login with development quick-login.
 - Dashboard with tenant totals, active records, total area, and completeness overview.
 - Tenant Directory with search, pagination, tower, floor, and status filters.
-- Tenant CRUD: create, view, edit, delete, archive, and restore.
+- Tenant CRUD: create, view, edit, and delete.
 - Excel `.xls`/HTML-table import with field mapping, completeness analysis, preview, and confirmation.
 - JSON backup and restore.
 - Native `.xlsx` export using Rust and `rust_xlsxwriter`.
@@ -34,7 +34,7 @@ Core fields:
 - No. tlp keadaan darurat
 - No Parkir
 
-Additional preserved fields include Kode Tenant, Lokasi/Tower, Periode Huni, Status, and archive state.
+Additional preserved fields include Kode Tenant, Lokasi/Tower, Periode Huni, and Status.
 
 ## Technology
 
@@ -101,7 +101,7 @@ Installers are generated under `src-tauri/target/release/bundle/`.
 
 SQLite is managed by Rust and stored in the Tauri application data directory as `tenant_hub.db`. Inline migrations are executed during application startup.
 
-Database commands include loading, replacing, creating, updating, deleting, and archiving tenant records. The UI is updated only after the SQLite operation succeeds.
+Database commands include loading, replacing, creating, updating, and deleting tenant records. The UI is updated only after the SQLite operation succeeds.
 
 ## Excel import
 
@@ -113,11 +113,9 @@ Database commands include loading, replacing, creating, updating, deleting, and 
 
 Summary Excel files may not contain all detail columns. Missing detail values can be completed through the CRUD form.
 
-## Backup and export
+## Excel export
 
-- **Cadangkan** saves a JSON backup to the Windows Downloads folder.
-- **Pulihkan** validates a JSON backup and replaces the current SQLite records after confirmation.
-- **Ekspor Excel** reads records from SQLite, creates an `.xlsx` workbook in Rust, and opens a native save dialog to choose the destination.
+**Ekspor Excel** reads records from SQLite, creates an `.xlsx` workbook in Rust, and opens a native save dialog to choose the destination. The exported workbook can be retained as the department's archive or shared for operational review.
 
 ## License
 

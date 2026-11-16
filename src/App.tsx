@@ -10,7 +10,6 @@ import {
   deleteTenant,
   loadTenants,
   replaceTenants,
-  setTenantArchived,
   updateTenant,
 } from "./services/tenantDatabase";
 
@@ -94,18 +93,6 @@ function App() {
             .then(() => {
               setTenants((current) =>
                 current.filter((item) => item.code !== code),
-              );
-              setDatabaseError("");
-            })
-            .catch(reportDatabaseError);
-        }}
-        onArchive={(tenant) => {
-          void setTenantArchived(tenant.code, tenant.archived)
-            .then(() => {
-              setTenants((current) =>
-                current.map((item) =>
-                  item.code === tenant.code ? tenant : item,
-                ),
               );
               setDatabaseError("");
             })
