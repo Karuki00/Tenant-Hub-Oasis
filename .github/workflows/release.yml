@@ -44,7 +44,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: TenantHub ${{ github.ref_name }}
           releaseBody: Signed TenantHub desktop release.
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
