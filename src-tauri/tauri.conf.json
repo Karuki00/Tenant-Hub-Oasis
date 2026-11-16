@@ -23,9 +23,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE_WITH_TAURI_UPDATER_PUBLIC_KEY",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcwODcxOTY5NkRCMEJDN0MKUldSOHZMQnRhUm1IY0VBTkhWamtpSGswRXJLbWl2bmdTakNTdDMyQThYZkVCbVRyL1RsYlBUdEIK",
       "endpoints": [
-        "https://github.com/REPLACE_OWNER/REPLACE_REPO/releases/latest/download/latest.json"
+        "https://github.com/Karuki00/REPLACE_REPO/releases/latest/download/latest.json"
       ]
     }
   },
