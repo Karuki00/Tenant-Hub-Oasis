@@ -4,7 +4,7 @@ TenantHub is a Windows desktop application for the Tenant Relation department of
 
 ## Current release
 
-- Version: `v0.1.0`
+- Version: `v0.2.0`
 - Repository: [Karuki00/Tenant-Hub-Oasis](https://github.com/Karuki00/Tenant-Hub-Oasis)
 - Platform: Windows desktop
 
@@ -102,6 +102,14 @@ Installers are generated under `src-tauri/target/release/bundle/`.
 SQLite is managed by Rust and stored in the Tauri application data directory as `tenant_hub.db`. Inline migrations are executed during application startup.
 
 Database commands include loading, replacing, creating, updating, and deleting tenant records. The UI is updated only after the SQLite operation succeeds.
+
+## Authentication
+
+On the first launch, TenantHub asks the Tenant Relation administrator to create a username and password. Passwords are hashed with Argon2 and are never stored as plaintext.
+
+The setup flow generates a master recovery code. Store it securely outside the application. If the password is forgotten, the master code can be used to create a new password. A new recovery code is generated after every password reset.
+
+There is no default production password. The development quick-login button is available only in development builds.
 
 ## Excel import
 

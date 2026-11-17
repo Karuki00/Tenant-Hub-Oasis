@@ -23,7 +23,7 @@ export function AboutModal({ onClose, updateVersion, onInstallUpdate }: {
           <img className="about-logo" src={oasisLogo} alt="OASIS Mitra Sarana" />
           <p className="about-brand">OASIS One</p>
           <p className="about-tagline">Platform Tenant Relation Apartemen Mitra Oasis Sarana</p>
-          <span className="about-version">v0.1.0</span>
+          <span className="about-version">v0.2.0</span>
         </div>
         <div className="about-content">
           <div className="about-summary">

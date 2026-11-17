@@ -1269,6 +1269,29 @@ body:has(.modal-backdrop) {
   cursor: not-allowed;
   opacity: 0.45;
 }
+.master-code {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 0.125rem solid #bda66f;
+  border-radius: 0.75rem;
+  color: #1c3223;
+  background: #e8ece5;
+  font-family: monospace;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.login-warning {
+  margin: 0 0 1rem;
+  color: #7e6421;
+  font-size: 0.78rem;
+  text-align: center;
+}
+.login-secondary-action {
+  width: 100%;
+  margin-top: 0.65rem;
+}
 .pagination-buttons span {
   white-space: nowrap;
 }

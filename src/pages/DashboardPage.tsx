@@ -146,7 +146,7 @@ export function DashboardPage({
             <p className="muted">Kelola data penyewa, impor Excel, dan lakukan CRUD.</p>
           </div>
           <div className="top-actions">
-            <button className={`version-button ${updateVersion ? "update-available" : ""}`} onClick={() => setAboutOpen(true)}>v0.1.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}</button>
+            <button className={`version-button ${updateVersion ? "update-available" : ""}`} onClick={() => setAboutOpen(true)}>v0.2.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}</button>
             <button
               className="primary-button"
               onClick={() => setFormTenant(null)}

@@ -1,6 +1,6 @@
 [package]
 name = "tenant-hub"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2024"
@@ -27,6 +27,8 @@ tauri-plugin-process = "2.4.0"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
 rust_xlsxwriter = "0.102.0"
 rfd = "0.17.2"
+argon2 = { version = "0.6.0", features = ["rand_core"] }
+rand = "0.10.4"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

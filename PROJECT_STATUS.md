@@ -4,9 +4,18 @@ TenantHub is an internal Tenant Relation desktop application built with Tauri, R
 
 ## Release policy
 
-The project is currently in development. Do not assign or announce a release version yet. A version such as `v0.1.0` will be added only when the product owner confirms that the feature set is complete and ready to release.
+The current internal release is `v0.2.0`, including first-launch password setup and master-code recovery.
 
 ## Big milestone - Tenant Relation data management foundation
+
+### Authentication milestone - 0.2.0 development scope
+
+- [x] Create username and password on first launch
+- [x] Hash credentials with Argon2 in Rust
+- [x] Generate a master recovery code
+- [x] Reset password using the master recovery code
+- [x] Rotate the recovery code after password reset
+- [x] Keep development quick-login limited to development builds
 
 ### Product workflow
 
@@ -42,7 +51,7 @@ The project is currently in development. Do not assign or announce a release ver
 - [x] Read tenant detail modal
 - [x] Update tenant
 - [x] Delete tenant with confirmation
-- [x] Validate duplicate unit numbers
+- [x] Allow duplicate unit values from source Excel data
 - [x] Persist CRUD changes in SQLite
 
 ### SQLite
@@ -51,7 +60,7 @@ The project is currently in development. Do not assign or announce a release ver
 - [x] Add initial tenant schema
 - [x] Add database indexes for unit, tower, and tenant name
 - [x] Add migration for expanded tenant statuses
-- [x] Add database service for load, replace, create, update, delete, and archive operations
+- [x] Add database service for load, replace, create, update, and delete operations
 - [x] Add native Excel export through Tenant Directory
 - [ ] Complete packaged Tauri database testing
 
@@ -73,7 +82,7 @@ The project is currently in development. Do not assign or announce a release ver
 1. Test the SQLite migrations and CRUD workflow in a packaged Tauri build.
 2. Replace updater placeholders with the real GitHub repository and public key.
 3. Run the production updater test plan in `docs/UPDATER_TEST_PLAN.md`.
-4. Replace the temporary development login with persistent authentication.
+4. Test first-launch authentication and master-code recovery in a packaged Tauri build.
 5. Complete final acceptance testing with the actual Tenant Relation team.
 
 ## Reference data

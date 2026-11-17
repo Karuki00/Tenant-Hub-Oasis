@@ -1,4 +1,6 @@
 use rusqlite::{params, Connection, OptionalExtension};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use rand::{distr::{Alphanumeric, SampleString}, rng};
 use rust_xlsxwriter::Workbook;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
@@ -41,6 +43,13 @@ CREATE INDEX IF NOT EXISTS idx_tenants_unit ON tenants(unit);
 CREATE INDEX IF NOT EXISTS idx_tenants_tower ON tenants(tower);
 CREATE INDEX IF NOT EXISTS idx_tenants_name ON tenants(name);
 CREATE INDEX IF NOT EXISTS idx_tenants_archived ON tenants(archived);
+"#;
+const MIGRATION_4: &str = r#"
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 "#;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -92,7 +101,7 @@ fn connection(app: &AppHandle) -> Result<Connection, String> {
             "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY NOT NULL);",
         )
         .map_err(|error| error.to_string())?;
-    let migrations = [(1, MIGRATION_1), (2, ""), (3, MIGRATION_3)];
+    let migrations = [(1, MIGRATION_1), (2, ""), (3, MIGRATION_3), (4, MIGRATION_4)];
     for (version, sql) in migrations {
         let applied: Option<i64> = connection
             .query_row(
@@ -128,6 +137,109 @@ fn connection(app: &AppHandle) -> Result<Connection, String> {
         }
     }
     Ok(connection)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AuthStatus {
+    setup_required: bool,
+}
+
+fn setting(connection: &Connection, key: &str) -> Result<Option<String>, String> {
+    connection
+        .query_row("SELECT value FROM app_settings WHERE key=?", [key], |row| row.get(0))
+        .optional()
+        .map_err(|error| error.to_string())
+}
+
+fn set_setting(connection: &Connection, key: &str, value: &str) -> Result<(), String> {
+    connection
+        .execute(
+            "INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP",
+            params![key, value],
+        )
+        .map_err(|error| error.to_string())
+        .map(|_| ())
+}
+
+fn hash_secret(secret: &str) -> Result<String, String> {
+    Argon2::default()
+        .hash_password(secret.as_bytes())
+        .map(|hash| hash.to_string())
+        .map_err(|error| error.to_string())
+}
+
+fn verify_secret(secret: &str, encoded_hash: &str) -> bool {
+    PasswordHash::new(encoded_hash)
+        .map(|hash| Argon2::default().verify_password(secret.as_bytes(), &hash).is_ok())
+        .unwrap_or(false)
+}
+
+fn new_master_code() -> String {
+    let mut generator = rng();
+    let raw = Alphanumeric.sample_string(&mut generator, 16).to_uppercase();
+    format!("{}-{}-{}-{}", &raw[0..4], &raw[4..8], &raw[8..12], &raw[12..16])
+}
+
+#[tauri::command]
+fn auth_status(app: AppHandle) -> Result<AuthStatus, String> {
+    let connection = connection(&app)?;
+    Ok(AuthStatus {
+        setup_required: setting(&connection, "password_hash")?.is_none(),
+    })
+}
+
+#[tauri::command]
+fn setup_auth(app: AppHandle, username: String, password: String, confirmation: String) -> Result<String, String> {
+    let username = username.trim();
+    if username.len() < 3 {
+        return Err("Nama pengguna minimal 3 karakter.".to_string());
+    }
+    if password.len() < 8 {
+        return Err("Password minimal 8 karakter.".to_string());
+    }
+    if password != confirmation {
+        return Err("Konfirmasi password tidak cocok.".to_string());
+    }
+    let connection = connection(&app)?;
+    if setting(&connection, "password_hash")?.is_some() {
+        return Err("Password aplikasi sudah dibuat.".to_string());
+    }
+    let master_code = new_master_code();
+    set_setting(&connection, "username", username)?;
+    set_setting(&connection, "password_hash", &hash_secret(&password)?)?;
+    set_setting(&connection, "master_code_hash", &hash_secret(&master_code.replace('-', ""))?)?;
+    Ok(master_code)
+}
+
+#[tauri::command]
+fn login(app: AppHandle, username: String, password: String) -> Result<(), String> {
+    let connection = connection(&app)?;
+    let stored_username = setting(&connection, "username")?.ok_or_else(|| "Setup password belum dibuat.".to_string())?;
+    let password_hash = setting(&connection, "password_hash")?.ok_or_else(|| "Setup password belum dibuat.".to_string())?;
+    if username.trim() != stored_username || !verify_secret(&password, &password_hash) {
+        return Err("Nama pengguna atau password salah.".to_string());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn reset_password(app: AppHandle, master_code: String, password: String, confirmation: String) -> Result<String, String> {
+    if password.len() < 8 {
+        return Err("Password minimal 8 karakter.".to_string());
+    }
+    if password != confirmation {
+        return Err("Konfirmasi password tidak cocok.".to_string());
+    }
+    let connection = connection(&app)?;
+    let master_hash = setting(&connection, "master_code_hash")?.ok_or_else(|| "Master code belum tersedia.".to_string())?;
+    if !verify_secret(&master_code.replace('-', "").to_uppercase(), &master_hash) {
+        return Err("Master code salah.".to_string());
+    }
+    let new_code = new_master_code();
+    set_setting(&connection, "password_hash", &hash_secret(&password)?)?;
+    set_setting(&connection, "master_code_hash", &hash_secret(&new_code.replace('-', ""))?)?;
+    Ok(new_code)
 }
 
 fn row_to_tenant(row: &rusqlite::Row<'_>) -> rusqlite::Result<Tenant> {
@@ -257,6 +369,10 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             load_tenants,
+            auth_status,
+            setup_auth,
+            login,
+            reset_password,
             replace_tenants,
             create_tenant,
             update_tenant,
