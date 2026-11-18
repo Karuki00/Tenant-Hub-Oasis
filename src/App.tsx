@@ -4,6 +4,7 @@ import "./App.css";
 import "./theme.css";
 import { LoginPage } from "./components/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { applyImportPlan, type ImportMode, type ImportPlan } from "./services/excelImport";
 import { checkForUpdates, installAvailableUpdate } from "./updater";
 import {
   createTenant,
@@ -15,12 +16,13 @@ import {
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [locked, setLocked] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [databaseError, setDatabaseError] = useState("");
   const [view, setView] = useState<"dashboard" | "directory">("dashboard");
   const [updateVersion, setUpdateVersion] = useState<string | undefined>();
   const reportDatabaseError = (error: unknown) => {
-    const message =
+    const rawMessage =
       typeof error === "string"
         ? error
         : error instanceof Error
@@ -28,6 +30,15 @@ function App() {
           : error && typeof error === "object" && "message" in error
             ? String(error.message)
             : "Operasi database gagal.";
+    const message = rawMessage.includes("UNIQUE constraint")
+      ? "Data dengan kode penyewa tersebut sudah ada."
+      : rawMessage.includes("database is locked")
+        ? "Database sedang digunakan. Tunggu sebentar lalu coba lagi."
+        : rawMessage.includes("disk I/O")
+          ? "Database tidak dapat mengakses penyimpanan aplikasi."
+          : rawMessage.includes("no such table")
+            ? "Struktur database belum siap. Tutup dan buka kembali aplikasi."
+            : rawMessage;
     setDatabaseError(message);
   };
   useEffect(() => {
@@ -46,7 +57,10 @@ function App() {
       .catch(reportDatabaseError);
   }, [authenticated]);
   if (!authenticated)
-    return <LoginPage onLogin={() => setAuthenticated(true)} />;
+    return <LoginPage locked={locked} onLogin={() => {
+      setAuthenticated(true);
+      setLocked(false);
+    }} />;
   return (
     <>
       <DashboardPage
@@ -55,18 +69,29 @@ function App() {
         onViewChange={setView}
         onLogout={() => {
           setAuthenticated(false);
+          setLocked(false);
+          setTenants([]);
+          setView("dashboard");
+          setDatabaseError("");
+        }}
+        onLock={() => {
+          setAuthenticated(false);
+          setLocked(true);
           setTenants([]);
           setView("dashboard");
           setDatabaseError("");
         }}
         databaseError={databaseError}
-        onImport={(rows) => {
-          void replaceTenants(rows)
-            .then(() => {
-              setTenants(rows);
-              setDatabaseError("");
-            })
-            .catch(reportDatabaseError);
+        onImport={async (plan: ImportPlan, mode: ImportMode) => {
+          const rows = applyImportPlan(plan, tenants, mode);
+          try {
+            await replaceTenants(rows);
+            setTenants(rows);
+            setDatabaseError("");
+          } catch (error) {
+            reportDatabaseError(error);
+            throw error;
+          }
         }}
         onCreate={(tenant) => {
           void createTenant(tenant)

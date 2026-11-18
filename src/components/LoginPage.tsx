@@ -18,7 +18,7 @@ function errorMessage(error: unknown) {
   return "Operasi autentikasi gagal.";
 }
 
-export function LoginPage({ onLogin }: { onLogin: () => void }) {
+export function LoginPage({ onLogin, locked = false }: { onLogin: () => void; locked?: boolean }) {
   const [mode, setMode] = useState<LoginMode>("loading");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -26,6 +26,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [masterCode, setMasterCode] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [error, setError] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -62,13 +63,17 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
   };
 
   const heading =
-    mode === "setup"
+    locked
+      ? "Aplikasi terkunci"
+      : mode === "setup"
       ? "Buat akses aplikasi"
       : mode === "recovery"
         ? "Reset password"
         : "OASIS Enterprise Hub";
   const subtitle =
-    mode === "setup"
+    locked
+      ? "Masukkan username dan password untuk melanjutkan."
+      : mode === "setup"
       ? "Buat username dan password untuk penggunaan internal."
       : mode === "recovery"
         ? "Gunakan master code untuk membuat password baru."
@@ -90,9 +95,26 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
               password terlupa.
             </p>
             <div className="master-code">{recoveryCode}</div>
+            <button
+              className="secondary-button login-submit"
+              type="button"
+              onClick={() => {
+                if (!navigator.clipboard) {
+                  setCopyMessage("Master code tidak dapat disalin otomatis.");
+                  return;
+                }
+                void navigator.clipboard.writeText(recoveryCode).then(
+                  () => setCopyMessage("Master code berhasil disalin."),
+                  () => setCopyMessage("Master code tidak dapat disalin otomatis."),
+                );
+              }}
+            >
+              Salin master code
+            </button>
+            {copyMessage && <p className="login-copy-message">{copyMessage}</p>}
             <p className="login-warning">
-              Kode hanya ditampilkan sekarang dan akan berubah setelah reset
-              password berikutnya.
+              Simpan kode ini sekarang. Kode tidak dapat ditampilkan lagi setelah
+              halaman ini ditinggalkan dan akan berubah setelah reset berikutnya.
             </p>
             <button
               className="primary-button login-submit"
@@ -201,7 +223,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
                 Kembali ke login
               </button>
             )}
-            {import.meta.env.DEV && mode === "login" && (
+            {import.meta.env.DEV && mode === "login" && !locked && (
               <button className="quick-login" type="button" onClick={onLogin}>
                 Masuk cepat untuk pengembangan
               </button>

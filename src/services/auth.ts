@@ -10,6 +10,11 @@ export const setupAuth = (
 ) => invoke<string>("setup_auth", { username, password, confirmation });
 export const login = (username: string, password: string) =>
   invoke<void>("login", { username, password });
+export const changePassword = (
+  currentPassword: string,
+  password: string,
+  confirmation: string,
+) => invoke<void>("change_password", { currentPassword, password, confirmation });
 export const resetPassword = (
   masterCode: string,
   password: string,

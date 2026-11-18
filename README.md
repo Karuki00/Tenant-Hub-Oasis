@@ -4,7 +4,7 @@ TenantHub is a Windows desktop application for the Tenant Relation department of
 
 ## Current release
 
-- Version: `v0.2.0`
+- Version: `v0.3.0`
 - Repository: [Karuki00/Tenant-Hub-Oasis](https://github.com/Karuki00/Tenant-Hub-Oasis)
 - Platform: Windows desktop
 
@@ -12,9 +12,9 @@ TenantHub is a Windows desktop application for the Tenant Relation department of
 
 - Tenant Relation login with development quick-login.
 - Dashboard with tenant totals, active records, total area, and completeness overview.
-- Tenant Directory with search, pagination, tower, floor, and status filters.
+- Tenant Directory with search, pagination, tower, floor, status, completeness, and occupancy filters, plus sorting and quick edit.
 - Tenant CRUD: create, view, edit, and delete.
-- Excel `.xls`/HTML-table import with field mapping, completeness analysis, preview, and confirmation.
+- Excel `.xls`/HTML-table import with field mapping, completeness analysis, duplicate detection, safe merge modes, preview, and confirmation.
 - JSON backup and restore.
 - Native `.xlsx` export using Rust and `rust_xlsxwriter`.
 - Native Windows save dialog for choosing the Excel export location.
@@ -35,6 +35,8 @@ Core fields:
 - No Parkir
 
 Additional preserved fields include Kode Tenant, Lokasi/Tower, Periode Huni, and Status.
+Records also have a flexible relationship category, such as Tenant, Vendor/Provider,
+Contractor, Operations, Facility, Management, or Other.
 
 ## Technology
 
@@ -110,6 +112,14 @@ On the first launch, TenantHub asks the Tenant Relation administrator to create 
 The setup flow generates a master recovery code. Store it securely outside the application. If the password is forgotten, the master code can be used to create a new password. A new recovery code is generated after every password reset.
 
 There is no default production password. The development quick-login button is available only in development builds.
+
+While logged in, the administrator can use **Pengaturan** to change the password
+by entering the current password and confirming a new one. This normal change does
+not rotate the master recovery code; the recovery code is used only for forgotten-password recovery.
+
+The **Kunci aplikasi** action clears the active session and returns to the login
+screen without restarting TenantHub. The administrator can also copy the recovery
+code when it is first displayed during setup or password recovery.
 
 ## Excel import
 

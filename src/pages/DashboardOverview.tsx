@@ -2,6 +2,9 @@ import { useState } from "react";
 import type { Tenant } from "../types/tenant";
 import { Brand } from "../components/Brand";
 import { AboutModal } from "../components/AboutModal";
+import { ChangePasswordModal } from "../components/ChangePasswordModal";
+
+export type DirectoryFocus = "all" | "incomplete" | "review" | "vacant" | "expired";
 
 export function DashboardOverview({
   tenants,
@@ -10,17 +13,28 @@ export function DashboardOverview({
   updateVersion,
   onInstallUpdate,
   onLogout,
+  onLock,
+  onOpenSettings,
+  passwordModalOpen,
+  onCloseSettings,
+  onChangePassword,
 }: {
   tenants: Tenant[];
-  onOpenDirectory: () => void;
+  onOpenDirectory: (focus?: DirectoryFocus) => void;
   databaseError?: string;
   updateVersion?: string;
   onInstallUpdate: () => void;
   onLogout: () => void;
+  onLock: () => void;
+  onOpenSettings: () => void;
+  passwordModalOpen: boolean;
+  onCloseSettings: () => void;
+  onChangePassword: (currentPassword: string, password: string, confirmation: string) => Promise<void>;
 }) {
   const [aboutOpen, setAboutOpen] = useState(false);
-  const active = tenants.filter((tenant) => tenant.status === "Active").length;
-  const incomplete = tenants.filter(
+  const currentTenants = tenants.filter((tenant) => !tenant.archived);
+  const active = currentTenants.filter((tenant) => tenant.status === "Active").length;
+  const incomplete = currentTenants.filter(
     (tenant) =>
       !tenant.email ||
       !tenant.phone ||
@@ -28,9 +42,9 @@ export function DashboardOverview({
       !tenant.parking ||
       tenant.power <= 0,
   ).length;
-  const area = tenants.reduce((sum, tenant) => sum + tenant.area, 0);
-  const completeness = tenants.length
-    ? Math.round(((tenants.length - incomplete) / tenants.length) * 100)
+  const area = currentTenants.reduce((sum, tenant) => sum + tenant.area, 0);
+  const completeness = currentTenants.length
+    ? Math.round(((currentTenants.length - incomplete) / currentTenants.length) * 100)
     : 0;
   return (
     <div className="app-shell">
@@ -38,16 +52,17 @@ export function DashboardOverview({
         <Brand />
         <nav>
           <button className="nav-item active">Dasbor</button>
-          <button className="nav-item" onClick={onOpenDirectory}>
+          <button className="nav-item" onClick={() => onOpenDirectory()}>
             Direktori penyewa
           </button>
         </nav>
         <div className="sidebar-bottom">
           <div className="sync-card">
             <span className="online-dot" /> SQLite database
-            <small>{tenants.length} data dimuat</small>
+            <small>{currentTenants.length} data aktif dimuat</small>
           </div>
-          <button className="nav-item">Pengaturan</button>
+          <button className="nav-item" onClick={onOpenSettings}>Pengaturan</button>
+          <button className="nav-item lock-button" onClick={onLock}>Kunci aplikasi</button>
           <button className="nav-item logout-button" onClick={onLogout}>Keluar</button>
           <div className="user-card">
             <span className="avatar">TR</span>
@@ -71,7 +86,7 @@ export function DashboardOverview({
             className={`version-button ${updateVersion ? "update-available" : ""}`}
             onClick={() => setAboutOpen(true)}
           >
-            v0.2.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}
+            v0.3.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}
           </button>
         </header>
         {databaseError && (
@@ -82,7 +97,7 @@ export function DashboardOverview({
         <section className="stats-grid">
           <OverviewStat
             label="Data penyewa"
-            value={String(tenants.length)}
+            value={String(currentTenants.length)}
             detail="Tersimpan di SQLite"
             tone="blue"
           />
@@ -115,7 +130,7 @@ export function DashboardOverview({
                 </p>
               </div>
             </div>
-            <button className="quick-access-button" onClick={onOpenDirectory}>
+            <button className="quick-access-button" onClick={() => onOpenDirectory()}>
               <strong>Direktori Penyewa</strong>
               <span>Cari, filter, impor, dan kelola data penyewa</span>
               <b>Buka</b>
@@ -138,14 +153,14 @@ export function DashboardOverview({
             <div className="quality-row">
               <span className="quality-icon orange-bg">!</span>
               <div>
-                <strong>{incomplete} data perlu ditinjau</strong>
+              <strong>{incomplete} data perlu ditinjau</strong>
                 <small>
                   No. telepon, email, kontak darurat, parkir, atau daya belum
                   lengkap
                 </small>
               </div>
             </div>
-            <button className="secondary-button" onClick={onOpenDirectory}>
+            <button className="secondary-button" onClick={() => onOpenDirectory("incomplete")}>
               Tinjau data
             </button>
           </div>
@@ -156,6 +171,12 @@ export function DashboardOverview({
           updateVersion={updateVersion}
           onClose={() => setAboutOpen(false)}
           onInstallUpdate={onInstallUpdate}
+        />
+      )}
+      {passwordModalOpen && (
+        <ChangePasswordModal
+          onClose={onCloseSettings}
+          onChangePassword={onChangePassword}
         />
       )}
     </div>

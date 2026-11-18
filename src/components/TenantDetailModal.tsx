@@ -20,7 +20,7 @@ export function TenantDetailModal({
         <button className="close-button" onClick={onClose}>
           X
         </button>
-        <p className="eyebrow">Profil penyewa</p>
+        <p className="eyebrow">Profil data relasi</p>
         <h2>{tenant.name}</h2>
         <p className="muted">
           {tenant.code} | {tenant.unit}
@@ -44,6 +44,7 @@ export function TenantDetailModal({
             label="Periode Huni"
             value={tenant.occupancyPeriod || "Belum diisi"}
           />
+          <Detail label="Jenis relasi / data" value={recordTypeLabel(tenant.recordType)} />
           <Detail
             label="Status"
             value={statusLabel(tenant.status)}
@@ -54,7 +55,7 @@ export function TenantDetailModal({
             Hapus
           </button>
           <button className="primary-button" onClick={onEdit}>
-            Edit penyewa
+            Edit data
           </button>
         </div>
       </div>
@@ -64,7 +65,7 @@ export function TenantDetailModal({
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="detail-item">
       <small>{label}</small>
       <strong>{value}</strong>
     </div>
@@ -80,4 +81,16 @@ function statusLabel(status: Tenant["status"]) {
     Expired: "Kedaluwarsa",
     Suspended: "Ditangguhkan",
   }[status];
+}
+
+function recordTypeLabel(type: Tenant["recordType"]) {
+  return {
+    Tenant: "Penyewa",
+    Vendor: "Vendor / Provider",
+    Contractor: "Kontraktor",
+    Operations: "Kantor operasional",
+    Facility: "Fasilitas / perangkat",
+    Management: "Pengelola",
+    Other: "Lainnya",
+  }[type];
 }

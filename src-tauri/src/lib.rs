@@ -51,6 +51,10 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 "#;
+const MIGRATION_5: &str = r#"
+ALTER TABLE tenants ADD COLUMN record_type TEXT NOT NULL DEFAULT 'Tenant';
+CREATE INDEX IF NOT EXISTS idx_tenants_record_type ON tenants(record_type);
+"#;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -68,6 +72,7 @@ struct Tenant {
     occupancy_period: String,
     status: String,
     archived: bool,
+    record_type: String,
 }
 
 fn db_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -101,7 +106,7 @@ fn connection(app: &AppHandle) -> Result<Connection, String> {
             "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY NOT NULL);",
         )
         .map_err(|error| error.to_string())?;
-    let migrations = [(1, MIGRATION_1), (2, ""), (3, MIGRATION_3), (4, MIGRATION_4)];
+    let migrations = [(1, MIGRATION_1), (2, ""), (3, MIGRATION_3), (4, MIGRATION_4), (5, MIGRATION_5)];
     for (version, sql) in migrations {
         let applied: Option<i64> = connection
             .query_row(
@@ -137,6 +142,16 @@ fn connection(app: &AppHandle) -> Result<Connection, String> {
         }
     }
     Ok(connection)
+}
+
+fn backup_before_replace(app: &AppHandle) -> Result<(), String> {
+    let database = db_path(app)?;
+    if !database.exists() {
+        return Ok(());
+    }
+    let backup = database.with_file_name("tenant_hub-before-import.db");
+    fs::copy(database, backup).map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 #[derive(Debug, Serialize)]
@@ -224,6 +239,23 @@ fn login(app: AppHandle, username: String, password: String) -> Result<(), Strin
 }
 
 #[tauri::command]
+fn change_password(app: AppHandle, current_password: String, password: String, confirmation: String) -> Result<(), String> {
+    if password.len() < 8 {
+        return Err("Password minimal 8 karakter.".to_string());
+    }
+    if password != confirmation {
+        return Err("Konfirmasi password tidak cocok.".to_string());
+    }
+    let connection = connection(&app)?;
+    let stored_hash = setting(&connection, "password_hash")?.ok_or_else(|| "Setup password belum dibuat.".to_string())?;
+    if !verify_secret(&current_password, &stored_hash) {
+        return Err("Password saat ini salah.".to_string());
+    }
+    set_setting(&connection, "password_hash", &hash_secret(&password)?)?;
+    Ok(())
+}
+
+#[tauri::command]
 fn reset_password(app: AppHandle, master_code: String, password: String, confirmation: String) -> Result<String, String> {
     if password.len() < 8 {
         return Err("Password minimal 8 karakter.".to_string());
@@ -257,13 +289,14 @@ fn row_to_tenant(row: &rusqlite::Row<'_>) -> rusqlite::Result<Tenant> {
         occupancy_period: row.get(10)?,
         status: row.get(11)?,
         archived: row.get::<_, i64>(12)? != 0,
+        record_type: row.get(13)?,
     })
 }
 
 #[tauri::command]
 fn load_tenants(app: AppHandle) -> Result<Vec<Tenant>, String> {
     let connection = connection(&app)?;
-    let mut statement = connection.prepare("SELECT code, unit, name, area, power, phone, email, emergency, parking, tower, occupancy_period, status, archived FROM tenants ORDER BY tower, unit").map_err(|error| error.to_string())?;
+    let mut statement = connection.prepare("SELECT code, unit, name, area, power, phone, email, emergency, parking, tower, occupancy_period, status, archived, record_type FROM tenants ORDER BY tower, unit").map_err(|error| error.to_string())?;
     statement
         .query_map([], row_to_tenant)
         .map_err(|error| error.to_string())?
@@ -273,6 +306,7 @@ fn load_tenants(app: AppHandle) -> Result<Vec<Tenant>, String> {
 
 #[tauri::command]
 fn replace_tenants(app: AppHandle, tenants: Vec<Tenant>) -> Result<(), String> {
+    backup_before_replace(&app)?;
     let mut connection = connection(&app)?;
     let transaction = connection
         .transaction()
@@ -287,7 +321,7 @@ fn replace_tenants(app: AppHandle, tenants: Vec<Tenant>) -> Result<(), String> {
 }
 
 fn insert_tenant(connection: &Connection, tenant: &Tenant) -> Result<(), String> {
-    connection.execute("INSERT INTO tenants (code, unit, name, area, power, phone, email, emergency, parking, tower, occupancy_period, status, archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params![tenant.code, tenant.unit, tenant.name, tenant.area, tenant.power, tenant.phone, tenant.email, tenant.emergency, tenant.parking, tenant.tower, tenant.occupancy_period, tenant.status, tenant.archived as i64]).map_err(|error| error.to_string()).map(|_| ())
+    connection.execute("INSERT INTO tenants (code, unit, name, area, power, phone, email, emergency, parking, tower, occupancy_period, status, archived, record_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", params![tenant.code, tenant.unit, tenant.name, tenant.area, tenant.power, tenant.phone, tenant.email, tenant.emergency, tenant.parking, tenant.tower, tenant.occupancy_period, tenant.status, tenant.archived as i64, tenant.record_type]).map_err(|error| error.to_string()).map(|_| ())
 }
 
 #[tauri::command]
@@ -299,7 +333,7 @@ fn create_tenant(app: AppHandle, tenant: Tenant) -> Result<(), String> {
 #[tauri::command]
 fn update_tenant(app: AppHandle, tenant: Tenant) -> Result<(), String> {
     let connection = connection(&app)?;
-    connection.execute("UPDATE tenants SET unit=?, name=?, area=?, power=?, phone=?, email=?, emergency=?, parking=?, tower=?, occupancy_period=?, status=?, archived=?, updated_at=CURRENT_TIMESTAMP WHERE code=?", params![tenant.unit, tenant.name, tenant.area, tenant.power, tenant.phone, tenant.email, tenant.emergency, tenant.parking, tenant.tower, tenant.occupancy_period, tenant.status, tenant.archived as i64, tenant.code]).map_err(|error| error.to_string()).map(|_| ())
+    connection.execute("UPDATE tenants SET unit=?, name=?, area=?, power=?, phone=?, email=?, emergency=?, parking=?, tower=?, occupancy_period=?, status=?, archived=?, record_type=?, updated_at=CURRENT_TIMESTAMP WHERE code=?", params![tenant.unit, tenant.name, tenant.area, tenant.power, tenant.phone, tenant.email, tenant.emergency, tenant.parking, tenant.tower, tenant.occupancy_period, tenant.status, tenant.archived as i64, tenant.record_type, tenant.code]).map_err(|error| error.to_string()).map(|_| ())
 }
 
 #[tauri::command]
@@ -330,7 +364,7 @@ fn export_tenants_xlsx(app: AppHandle) -> Result<String, String> {
     let worksheet = workbook.add_worksheet();
     let headers = [
         "Kode Tenant", "No. Unit", "Nama", "Luas", "Daya", "No. tlp", "Email",
-        "No. tlp keadaan darurat", "No Parkir", "Tower", "Periode Huni", "Status",
+        "No. tlp keadaan darurat", "No Parkir", "Tower", "Periode Huni", "Jenis Relasi", "Status",
     ];
     for (column, header) in headers.iter().enumerate() {
         worksheet
@@ -350,7 +384,8 @@ fn export_tenants_xlsx(app: AppHandle) -> Result<String, String> {
         worksheet.write_string(row, 8, &tenant.parking).map_err(|error| error.to_string())?;
         worksheet.write_string(row, 9, &tenant.tower).map_err(|error| error.to_string())?;
         worksheet.write_string(row, 10, &tenant.occupancy_period).map_err(|error| error.to_string())?;
-        worksheet.write_string(row, 11, &tenant.status).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 11, &tenant.record_type).map_err(|error| error.to_string())?;
+        worksheet.write_string(row, 12, &tenant.status).map_err(|error| error.to_string())?;
     }
     worksheet.set_freeze_panes(1, 0).map_err(|error| error.to_string())?;
     workbook.save(&path).map_err(|error| error.to_string())?;
@@ -372,6 +407,7 @@ pub fn run() {
             auth_status,
             setup_auth,
             login,
+            change_password,
             reset_password,
             replace_tenants,
             create_tenant,

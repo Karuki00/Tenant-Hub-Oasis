@@ -6,6 +6,15 @@ export type TenantStatus =
   | "Expired"
   | "Suspended";
 
+export type TenantRecordType =
+  | "Tenant"
+  | "Vendor"
+  | "Contractor"
+  | "Operations"
+  | "Facility"
+  | "Management"
+  | "Other";
+
 export type Tenant = {
   // Core Tenant Relation detail columns.
   unit: string; // No. Unit
@@ -21,6 +30,7 @@ export type Tenant = {
   code: string; // Kode Tenant
   tower: string; // Lokasi
   occupancyPeriod: string; // Periode Huni
+  recordType: TenantRecordType; // Jenis relasi/data
   status: TenantStatus;
   archived: boolean;
 };
