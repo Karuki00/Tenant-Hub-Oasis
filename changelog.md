@@ -1,3 +1,12 @@
+# TenantHub v0.3.1
+
+## Form continuity and tower selection
+
+- Preserved unsaved Tambah Data values when the modal is closed accidentally and reopened before submission.
+- Cleared the new-record draft after successful submission.
+- Changed Lokasi / Tower into a dropdown with TOWER A, TOWER B, and TOWER C options.
+- Preserved existing imported tower values when editing records outside those standard options.
+
 # TenantHub v0.3.0
 
 ## Safe Excel import and duplicate handling
@@ -47,7 +56,6 @@
 - Added a Salin master code action during first-launch setup and recovery reset.
 - Clarified that the recovery code must be saved before leaving the screen because it cannot be displayed again.
 - Fixed the Dashboard Pengaturan button so Ubah password opens correctly from both Dashboard and Directory views.
-
 ## General relationship records
 
 - Added a flexible record category for tenants, vendors/providers, contractors, operational offices, facilities/devices, management, and other records.

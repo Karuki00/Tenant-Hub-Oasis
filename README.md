@@ -4,7 +4,7 @@ TenantHub is a Windows desktop application for the Tenant Relation department of
 
 ## Current release
 
-- Version: `v0.3.0`
+- Version: `v0.3.1`
 - Repository: [Karuki00/Tenant-Hub-Oasis](https://github.com/Karuki00/Tenant-Hub-Oasis)
 - Platform: Windows desktop
 

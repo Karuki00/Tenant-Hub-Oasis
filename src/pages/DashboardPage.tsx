@@ -63,6 +63,7 @@ export function DashboardPage({
   const [formTenant, setFormTenant] = useState<Tenant | null | undefined>(
     undefined,
   );
+  const [newTenantDraft, setNewTenantDraft] = useState<Tenant | undefined>();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [lastLoadedAt, setLastLoadedAt] = useState(() => new Date());
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -252,11 +253,11 @@ export function DashboardPage({
               className={`version-button ${updateVersion ? "update-available" : ""}`}
               onClick={() => setAboutOpen(true)}
             >
-              v0.3.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}
+              v0.3.1{updateVersion ? ` · v${updateVersion} tersedia` : ""}
             </button>
             <button
               className="primary-button"
-              onClick={() => setFormTenant(null)}
+            onClick={() => setFormTenant(null)}
             >
               Tambah penyewa
             </button>
@@ -474,11 +475,14 @@ export function DashboardPage({
       {formTenant !== undefined && (
         <TenantFormModal
           tenant={formTenant}
+          draftTenant={formTenant === null ? newTenantDraft : undefined}
           existingTenants={tenants}
           onClose={() => setFormTenant(undefined)}
+          onDraftChange={setNewTenantDraft}
           onSave={(tenant) => {
             if (formTenant) onUpdate(tenant);
             else onCreate(tenant);
+            if (!formTenant) setNewTenantDraft(undefined);
             setFormTenant(undefined);
           }}
         />

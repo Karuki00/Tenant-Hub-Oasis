@@ -86,7 +86,7 @@ export function DashboardOverview({
             className={`version-button ${updateVersion ? "update-available" : ""}`}
             onClick={() => setAboutOpen(true)}
           >
-            v0.3.0{updateVersion ? ` · v${updateVersion} tersedia` : ""}
+            v0.3.1{updateVersion ? ` · v${updateVersion} tersedia` : ""}
           </button>
         </header>
         {databaseError && (

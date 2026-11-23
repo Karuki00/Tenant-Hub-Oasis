@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { Tenant } from "../types/tenant";
 import {
@@ -27,23 +27,32 @@ const emptyTenant: Tenant = {
 
 export function TenantFormModal({
   tenant,
+  draftTenant,
   existingTenants = [],
   onClose,
   onSave,
+  onDraftChange,
 }: {
   tenant?: Tenant | null;
+  draftTenant?: Tenant;
   existingTenants?: Tenant[];
   onClose: () => void;
   onSave: (tenant: Tenant) => void;
+  onDraftChange?: (tenant: Tenant) => void;
 }) {
-  const [form, setForm] = useState<Tenant>(tenant ?? emptyTenant);
+  const [form, setForm] = useState<Tenant>(tenant ?? draftTenant ?? emptyTenant);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<TenantValidationErrors>({});
+  useEffect(() => {
+    if (!tenant) onDraftChange?.(form);
+  }, [form, tenant, onDraftChange]);
   const update = (key: keyof Tenant, value: string) => {
-    setForm((current) => ({
-      ...current,
-      [key]: key === "area" || key === "power" ? Number(value) : value,
-    }));
+    setForm((current) => {
+      return {
+        ...current,
+        [key]: key === "area" || key === "power" ? Number(value) : value,
+      };
+    });
     if (key in fieldErrors) {
       setFieldErrors((current) => {
         const next = { ...current };
@@ -163,12 +172,18 @@ export function TenantFormModal({
             onChange={(value) => update("code", value)}
             placeholder="Contoh: TN/APRT/00001"
           />
-          <Field
-            label="Lokasi / Tower"
-            value={form.tower}
-            onChange={(value) => update("tower", value)}
-            placeholder="Contoh: TOWER A"
-          />
+          <label className="form-field">
+            Lokasi / Tower
+            <select value={form.tower} onChange={(event) => update("tower", event.target.value)}>
+              <option value="">Pilih tower</option>
+              <option value="TOWER A">TOWER A</option>
+              <option value="TOWER B">TOWER B</option>
+              <option value="TOWER C">TOWER C</option>
+              {form.tower && !["TOWER A", "TOWER B", "TOWER C"].includes(form.tower) && (
+                <option value={form.tower}>{form.tower}</option>
+              )}
+            </select>
+          </label>
           <Field
             label="Periode Huni"
             value={form.occupancyPeriod}

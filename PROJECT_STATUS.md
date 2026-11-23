@@ -4,7 +4,14 @@ TenantHub is an internal Tenant Relation desktop application built with Tauri, R
 
 ## Release policy
 
-The `v0.3.0` release includes first-launch password setup, master-code recovery, UI improvements, safe Excel import handling, general relationship records, and authentication usability improvements.
+The `v0.3.1` release includes the `v0.3.0` features plus form draft continuity and tower dropdown improvements.
+
+## v0.3.1 patch milestone
+
+- [x] Preserve unsaved Tambah Data values when the modal is closed and reopened.
+- [x] Clear the new-record draft after submission.
+- [x] Provide TOWER A, TOWER B, and TOWER C dropdown options.
+- [x] Preserve non-standard imported tower values during editing.
 
 ## v0.3.0 improvement milestone
 
